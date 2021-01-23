@@ -7,7 +7,27 @@
   <style>
     body {
       margin: 0;
-      padding-bottom: 3em;
+      padding: 3em 0;
+    }
+
+    #topbar {
+      position: fixed;
+      height: 3em;
+      display: flex;
+      top: 0;
+      width: 100%;
+      align-items: center;
+      background: #d5dbdb;
+    }
+
+    #topbar>h1 {
+      margin-left: 1em;
+      font-size: 1.2em;
+    }
+
+    #user-list {
+      margin-left: auto;
+      height: 100%;
     }
 
     #form {
@@ -28,29 +48,43 @@
       margin: 0;
     }
 
-    #messages > li {
-      padding: 0.5rem 1rem;
+    #messages>li {
+      padding: 0.5em 1em;
     }
 
-    #messages > li:nth-child(odd) {
+    #messages>li:nth-child(odd) {
       background: #efefef;
     }
   </style>
 </head>
 
 <body>
+  <div id="topbar">
+    <h1>Local Chat</h1>
+    <button id="user-list" onclick="displayUsers()">User List</button>
+  </div>
   <ul id="messages"></ul>
   <form id="form" action="">
     <input id="input" autocomplete="off" /><button>Send</button>
   </form>
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    var socket = io();
+    let socket = io();
 
-    var messages = document.getElementById('messages');
-    var form = document.getElementById('form');
-    var input = document.getElementById('input');
-    var username = localStorage.getItem('username') || window.prompt("Username:");
+    let messages = document.getElementById('messages');
+    let form = document.getElementById('form');
+    let input = document.getElementById('input');
+    let username = localStorage.getItem('username') || window.prompt("Username:");
+    let members = [];
+
+    function displayUsers() {
+      let userList = "\n\n"
+      for (let i = 0; i < members.length; i++) {
+        userList += `${i + 1}. ${members[i]}\n`;
+      }
+      let message = `Users List: ${userList}`;
+      window.alert(message);
+    }
 
     if (username) {
       localStorage.setItem('username', username);
@@ -65,16 +99,18 @@
         }
       });
 
-      socket.on('userConnected', (newUser) => {
+      socket.on('userConnected', (message) => {
         let item = document.createElement('li');
-        item.textContent = `${newUser} has joined the chat.`;
+        members = message.userList;
+        item.textContent = `${message.username} has joined the chat.`;
         messages.appendChild(item);
         window.scrollTo(0, document.body.scrollHeight);
       });
 
-      socket.on('userDisconnected', (oldUser) => {
+      socket.on('userDisconnected', (message) => {
         let item = document.createElement('li');
-        item.textContent = `${oldUser} has left the chat.`;
+        members = message.userList;
+        item.textContent = `${message.username} has left the chat.`;
         messages.appendChild(item);
         window.scrollTo(0, document.body.scrollHeight);
       });

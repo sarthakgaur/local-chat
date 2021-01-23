@@ -4,6 +4,9 @@ const io = require('socket.io')(http);
 
 // TODO Add support for nicknames. Done.
 // TODO Broadcast message when a user connects or disconnects. Done.
+// TODO Add option to get a list of connected users. Done
+// TODO Fix the layout in mobile devices. Done.
+// TODO Save username in the localStorage. Done.
 
 let connections = new Map();
 
@@ -14,7 +17,7 @@ app.get('/', (req, res) => {
 io.on('connection', (socket) => {
   socket.on('userConnected', (username) => {
     connections.set(socket.id, username);
-    io.emit('userConnected', username);
+    io.emit('userConnected', { username, userList: getUsersList() });
   });
 
   socket.on('chatMessage', (body) => {
@@ -26,10 +29,14 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     let username = connections.get(socket.id);
     connections.delete(socket.id);
-    io.emit('userDisconnected', username);
+    io.emit('userDisconnected', { username, userList: getUsersList() });
   });
 });
 
 http.listen(3000, () => {
   console.log('listening on *:3000');
 });
+
+function getUsersList() {
+  return Array.from(connections.values());
+}
