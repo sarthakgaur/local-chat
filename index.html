@@ -76,17 +76,31 @@
     var username = window.prompt("Username:");
 
     if (username) {
-      socket.emit('username', username);
+      socket.emit('userConnected', username);
 
-      form.addEventListener('submit', function (e) {
+      form.addEventListener('submit', (e) => {
         e.preventDefault();
         if (input.value) {
-          socket.emit('chat message', input.value);
+          socket.emit('chatMessage', input.value);
           input.value = '';
         }
       });
 
-      socket.on('chat message', function (message) {
+      socket.on('userConnected', (newUser) => {
+        let item = document.createElement('li');
+        item.textContent = `${newUser} has joined the chat.`;
+        messages.appendChild(item);
+        window.scrollTo(0, document.body.scrollHeight);
+      });
+
+      socket.on('userDisconnected', (oldUser) => {
+        let item = document.createElement('li');
+        item.textContent = `${oldUser} has left the chat.`;
+        messages.appendChild(item);
+        window.scrollTo(0, document.body.scrollHeight);
+      });
+
+      socket.on('chatMessage', (message) => {
         let item = document.createElement('li');
         let time = new Date(message.time).toLocaleTimeString();
         item.textContent = `${time} ${message.username}: ${message.body}`;
