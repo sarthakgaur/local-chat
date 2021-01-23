@@ -50,9 +50,11 @@
     var messages = document.getElementById('messages');
     var form = document.getElementById('form');
     var input = document.getElementById('input');
-    var username = window.prompt("Username:");
+    var username = localStorage.getItem('username') || window.prompt("Username:");
 
     if (username) {
+      localStorage.setItem('username', username);
+
       socket.emit('userConnected', username);
 
       form.addEventListener('submit', (e) => {
