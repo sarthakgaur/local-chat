@@ -76,7 +76,7 @@
   <form id="form" action="">
     <input id="input" autocomplete="off" />
     <input id="file" type="file" class="hidden" oninput="handleFileSelect()">
-    <button id="browse" onclick="handleBrowse()">Browse</button>
+    <button type="button" id="browse" onclick="handleBrowse()">Browse</button>
     <input type="submit" value="Send">
   </form>
   <script src="/socket.io/socket.io.js"></script>
@@ -115,21 +115,22 @@
     if (username) {
       localStorage.setItem('username', username);
 
-      socket.emit('userConnected', username);
+      socket.on('connect', () => {
+        socket.emit('userConnected', username);
+      });
 
       form.addEventListener('submit', (e) => {
         e.preventDefault();
         let file = document.getElementById('file').files[0];
         if (input.value) {
           socket.emit('chatMessage', input.value);
+          input.value = '';
         }
         if (file) {
           socket.emit('fileUpload', { buffer: file, name: file.name, type: file.type });
+          document.getElementById('file').value = '';
         }
-        if (input.value || file) {
-          e.target.reset();
-          handleFileSelect();
-        }
+        handleFileSelect();
       });
 
       socket.on('userConnected', (message) => {
@@ -151,7 +152,7 @@
       socket.on('chatMessage', (message) => {
         let item = document.createElement('li');
         let time = new Date(message.time).toLocaleTimeString();
-        item.textContent = `${time} ${message.username}: ${message.body}`;
+        item.textContent = `${time} > ${message.username}: ${message.body}`;
         messages.appendChild(item);
         window.scrollTo(0, document.body.scrollHeight);
       });
@@ -163,12 +164,12 @@
         a.href = message.link;
         a.target = "_blank";
         if (message.type.split('/')[0] === 'image') {
-          item.textContent = `${time} ${message.username}: `;
+          item.textContent = `${time} > ${message.username}: `;
           let img = document.createElement('img');
           img.src = message.link;
           a.appendChild(img);
         } else {
-          item.textContent = `${time} ${message.username} uploaded a `;
+          item.textContent = `${time} > ${message.username} uploaded a\u00A0`;
           a.textContent = "file";
         }
 
