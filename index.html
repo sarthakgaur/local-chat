@@ -50,10 +50,19 @@
 
     #messages>li {
       padding: 0.5em 1em;
+      display: flex;
+    }
+
+    #messages>li img {
+      width: 50%;
     }
 
     #messages>li:nth-child(odd) {
       background: #efefef;
+    }
+
+    .hidden {
+      display: none;
     }
   </style>
 </head>
@@ -65,7 +74,10 @@
   </div>
   <ul id="messages"></ul>
   <form id="form" action="">
-    <input id="input" autocomplete="off" /><button>Send</button>
+    <input id="input" autocomplete="off" />
+    <input id="file" type="file" class="hidden" oninput="handleFileSelect()">
+    <button id="browse" onclick="handleBrowse()">Browse</button>
+    <input type="submit" value="Send">
   </form>
   <script src="/socket.io/socket.io.js"></script>
   <script>
@@ -76,6 +88,20 @@
     let input = document.getElementById('input');
     let username = localStorage.getItem('username') || window.prompt("Username:");
     let members = [];
+
+    function handleBrowse() {
+      document.getElementById("file").click();
+    }
+
+    function handleFileSelect() {
+      let fileInput = document.getElementById('file');
+      let browseButton = document.getElementById('browse');
+      if (fileInput.files.length > 0) {
+        browseButton.textContent = "1 File Selected"
+      } else {
+        browseButton.textContent = "Browse";
+      }
+    }
 
     function displayUsers() {
       let userList = "\n\n"
@@ -93,9 +119,16 @@
 
       form.addEventListener('submit', (e) => {
         e.preventDefault();
+        let file = document.getElementById('file').files[0];
         if (input.value) {
           socket.emit('chatMessage', input.value);
-          input.value = '';
+        }
+        if (file) {
+          socket.emit('fileUpload', { buffer: file, name: file.name, type: file.type });
+        }
+        if (input.value || file) {
+          e.target.reset();
+          handleFileSelect();
         }
       });
 
@@ -119,6 +152,27 @@
         let item = document.createElement('li');
         let time = new Date(message.time).toLocaleTimeString();
         item.textContent = `${time} ${message.username}: ${message.body}`;
+        messages.appendChild(item);
+        window.scrollTo(0, document.body.scrollHeight);
+      });
+
+      socket.on('fileUpload', (message) => {
+        let item = document.createElement('li');
+        let time = new Date(message.time).toLocaleTimeString();
+        let a = document.createElement('a');
+        a.href = message.link;
+        a.target = "_blank";
+        if (message.type.split('/')[0] === 'image') {
+          item.textContent = `${time} ${message.username}: `;
+          let img = document.createElement('img');
+          img.src = message.link;
+          a.appendChild(img);
+        } else {
+          item.textContent = `${time} ${message.username} uploaded a `;
+          a.textContent = "file";
+        }
+
+        item.appendChild(a);
         messages.appendChild(item);
         window.scrollTo(0, document.body.scrollHeight);
       });
