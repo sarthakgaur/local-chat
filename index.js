@@ -1,7 +1,11 @@
 const express = require('express');
+const ejs = require('ejs');
+const multer = require("multer");
+const cookieParser = require("cookie-parser");
 const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
+const path = require("path");
 const fs = require('fs');
 
 // TODO Add support for nicknames. Done.
@@ -12,13 +16,60 @@ const fs = require('fs');
 // TODO Allow uploading of files. Done.
 // TODO View images in chat. Done.
 // TODO Fix upload button. Done.
-
-app.use(express.static(__dirname + '/public'));
+// TODO add Multer. Done.
+// Setup Views. Done.
 
 let connections = new Map();
+let lastFileUploaded;
+
+// Set Storage Engine
+const storage = multer.diskStorage({
+  destination: "./public/uploads",
+  filename: (req, file, cb) => {
+    let basename = path.basename(file.originalname);
+    let time = Date.now();
+    let extension = path.extname(file.originalname);
+    let nameOfFile = `${basename}-${time}${extension}`;
+    lastFileUploaded = { name: nameOfFile, type: file.mimetype }
+    cb(null, nameOfFile);
+  }
+});
+
+// Init Upload
+const upload = multer({
+  storage: storage
+}).single("chatFile");
+
+// EJS
+app.set("view engine", "ejs")
+
+// Parse Browser cookies
+app.use(cookieParser());
+
+// Public Folder
+app.use(express.static('./public'));
+
+// Static Files
+app.use("/assets", express.static("assets"));
 
 app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/index.html');
+  res.render("index");
+});
+
+app.post("/upload", (req, res) => {
+  upload(req, res, (err) => {
+    if (err) {
+      res.status(500).send({ message: "File upload failed." });
+    } else if (req.file == undefined) {
+      res.status(500).send({ message: "No file Selected." });
+    } else {
+      let time = Date.now();
+      let username = connections.get(req.cookies["socket_id"]);
+      let link = `/uploads/${lastFileUploaded.name}`;
+      res.status(200).send({ message: "File uploaded successfully." });
+      io.emit('fileUpload', { time, username, link, type: lastFileUploaded.type });
+    }
+  });
 });
 
 io.on('connection', (socket) => {
@@ -37,17 +88,6 @@ io.on('connection', (socket) => {
     let username = connections.get(socket.id);
     connections.delete(socket.id);
     io.emit('userDisconnected', { username, userList: getUsersList() });
-  });
-
-  socket.on('fileUpload', (file) => {
-    let time = Date.now();
-    let username = connections.get(socket.id);
-    fs.promises.writeFile(`./public/${file.name}`, file.buffer)
-      .then(() => {
-        let link = `/${file.name}`;
-        io.emit('fileUpload', { time, username, link, type: file.type });
-      })
-      .catch(console.error)
   });
 });
 

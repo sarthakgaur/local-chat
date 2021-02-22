@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Local Chat</title>
+  <meta name="viewport" content="width=device-width,height=device-height,initial-scale=1.0" />
+  <link rel="stylesheet" type="text/css" href="/assets/css/main.css" />
+</head>
+
+<body>
+  <div id="topbar">
+    <h1>Local Chat</h1>
+    <button id="user-list" onclick="displayUsers()">User List</button>
+  </div>
+  <ul id="messages"></ul>
+  <form id="form" action="">
+    <input id="input" autocomplete="off" />
+    <input id="file" type="file" class="hidden" oninput="handleFileSelect()">
+    <button type="button" id="browse" onclick="handleBrowse()">Browse</button>
+    <input type="submit" value="Send">
+  </form>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/assets/js/main.js"></script>
+</body>
+
+</html>
