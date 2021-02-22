@@ -17,7 +17,8 @@ const fs = require("fs");
 // TODO View images in chat. Done.
 // TODO Fix upload button. Done.
 // TODO add Multer. Done.
-// Setup Views. Done.
+// TODO Setup Views. Done.
+// TODO Add a link if chat message contains a url. Done.
 
 let connections = new Map();
 let lastFileUploaded;

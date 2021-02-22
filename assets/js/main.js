@@ -1,5 +1,3 @@
-let socket = io();
-
 let messages = document.getElementById("messages");
 let form = document.getElementById("form");
 let input = document.getElementById("input");
@@ -8,6 +6,44 @@ let members = [];
 
 function handleBrowse() {
   document.getElementById("file").click();
+}
+
+function createMessageBody(text) {
+  let urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+  let container = document.createElement("span");
+  let textBuffer = "";
+  let matches = [];
+  let match;
+
+  while (match = urlRegex.exec(text)) {
+    matches.push({ text: match[0], index: match.index });
+  }
+
+  for (let i = 0, matchIndex = 0; i < text.length; i++) {
+    if (matchIndex < matches.length && i === matches[matchIndex].index) {
+      if (textBuffer) {
+        let textNode = document.createTextNode(textBuffer);
+        container.appendChild(textNode);
+        textBuffer = "";
+      }
+      let link = document.createElement("a");
+      let textContent = matches[matchIndex].text;
+      link.href = textContent;
+      link.textContent = textContent;
+      container.append(link);
+      matchIndex++;
+      i += textContent.length - 1;
+    } else {
+      textBuffer += text[i] === " " ? "\u00A0" : text[i];
+    }
+  }
+
+  if (textBuffer) {
+    let textNode = document.createTextNode(textBuffer);
+    container.appendChild(textNode);
+  }
+
+  return container;
 }
 
 function handleFileSelect() {
@@ -30,6 +66,8 @@ function displayUsers() {
 }
 
 if (username) {
+  let socket = io();
+
   localStorage.setItem("username", username);
 
   form.addEventListener("submit", (e) => {
@@ -75,7 +113,9 @@ if (username) {
   socket.on("chatMessage", (message) => {
     let item = document.createElement("li");
     let time = new Date(message.time).toLocaleTimeString();
-    item.textContent = `${time} > ${message.username}: ${message.body}`;
+    let node = createMessageBody(message.body);
+    item.textContent = `${time} > ${message.username}:\u00A0`;
+    item.appendChild(node);
     messages.appendChild(item);
     window.scrollTo(0, document.body.scrollHeight);
   });
