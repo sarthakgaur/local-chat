@@ -1,12 +1,12 @@
-const express = require('express');
-const ejs = require('ejs');
+const express = require("express");
+const ejs = require("ejs");
 const multer = require("multer");
 const cookieParser = require("cookie-parser");
 const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
+const http = require("http").createServer(app);
+const io = require("socket.io")(http);
 const path = require("path");
-const fs = require('fs');
+const fs = require("fs");
 
 // TODO Add support for nicknames. Done.
 // TODO Broadcast message when a user connects or disconnects. Done.
@@ -47,12 +47,12 @@ app.set("view engine", "ejs")
 app.use(cookieParser());
 
 // Public Folder
-app.use(express.static('./public'));
+app.use(express.static("./public"));
 
 // Static Files
 app.use("/assets", express.static("assets"));
 
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
   res.render("index");
 });
 
@@ -67,32 +67,32 @@ app.post("/upload", (req, res) => {
       let username = connections.get(req.cookies["socket_id"]);
       let link = `/uploads/${lastFileUploaded.name}`;
       res.status(200).send({ message: "File uploaded successfully." });
-      io.emit('fileUpload', { time, username, link, type: lastFileUploaded.type });
+      io.emit("fileUpload", { time, username, link, type: lastFileUploaded.type });
     }
   });
 });
 
-io.on('connection', (socket) => {
-  socket.on('userConnected', (username) => {
+io.on("connection", (socket) => {
+  socket.on("userConnected", (username) => {
     connections.set(socket.id, username);
-    io.emit('userConnected', { username, userList: getUsersList() });
+    io.emit("userConnected", { username, userList: getUsersList() });
   });
 
-  socket.on('chatMessage', (body) => {
+  socket.on("chatMessage", (body) => {
     let time = Date.now();
     let username = connections.get(socket.id);
-    io.emit('chatMessage', { time, username, body });
+    io.emit("chatMessage", { time, username, body });
   });
 
-  socket.on('disconnect', () => {
+  socket.on("disconnect", () => {
     let username = connections.get(socket.id);
     connections.delete(socket.id);
-    io.emit('userDisconnected', { username, userList: getUsersList() });
+    io.emit("userDisconnected", { username, userList: getUsersList() });
   });
 });
 
 http.listen(3000, () => {
-  console.log('listening on *:3000');
+  console.log("listening on *:3000");
 });
 
 function getUsersList() {
