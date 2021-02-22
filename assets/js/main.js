@@ -90,7 +90,7 @@ if (username) {
   });
 
   socket.on("connect", () => {
-    document.cookie = `socket_id=${socket.id}`
+    document.cookie = `socket_id=${socket.id};SameSite=Strict`;
     socket.emit("userConnected", username);
   });
 
