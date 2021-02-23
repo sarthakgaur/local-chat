@@ -21,6 +21,7 @@ const fs = require("fs");
 // TODO Setup Views. Done.
 // TODO Add a link if chat message contains a url. Done.
 // TODO Add a database to save last 100 messages. Done.
+// TODO Uploaded files and images should be rendered along with messages.
 
 let connections = new Map();
 let lastFileUploaded;
@@ -76,17 +77,17 @@ app.post("/upload", (req, res) => {
 });
 
 io.on("connection", (socket) => {
-  socket.on("userConnected", (username) => {
+  socket.on("userConnected", async (username) => {
     connections.set(socket.id, username);
+    await sendOldMessages(socket);
     io.emit("userConnected", { username, userList: getUsersList() });
-    sendOldMessages(socket);
   });
 
-  socket.on("chatMessage", (body) => {
+  socket.on("chatMessage", async (body) => {
     let time = Date.now();
     let username = connections.get(socket.id);
+    await insertMessage(time, username, body);
     io.emit("chatMessage", { time, username, body });
-    insertMessage(time, username, body);
   });
 
   socket.on("disconnect", () => {
