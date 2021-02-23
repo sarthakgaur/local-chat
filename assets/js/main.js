@@ -65,6 +65,16 @@ function displayUsers() {
   window.alert(message);
 }
 
+function appendMessage(message) {
+  let item = document.createElement("li");
+  let time = new Date(message.time).toLocaleTimeString();
+  let node = createMessageBody(message.body);
+  item.textContent = `${time} > ${message.username}:\u00A0`;
+  item.appendChild(node);
+  messages.appendChild(item);
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
 if (username) {
   let socket = io();
 
@@ -79,9 +89,7 @@ if (username) {
     }
     if (file) {
       let formData = new FormData();
-      formData.append("chatFile", file);
-      fetch("/upload", {
-        method: "POST",
+      formData.append("chatFile", file); fetch("/upload", { method: "POST",
         body: formData
       });
       document.getElementById("file").value = "";
@@ -110,14 +118,12 @@ if (username) {
     window.scrollTo(0, document.body.scrollHeight);
   });
 
+  socket.on("oldMessages", (messages) => {
+    messages.forEach(appendMessage);
+  });
+
   socket.on("chatMessage", (message) => {
-    let item = document.createElement("li");
-    let time = new Date(message.time).toLocaleTimeString();
-    let node = createMessageBody(message.body);
-    item.textContent = `${time} > ${message.username}:\u00A0`;
-    item.appendChild(node);
-    messages.appendChild(item);
-    window.scrollTo(0, document.body.scrollHeight);
+    appendMessage(message);
   });
 
   socket.on("fileUpload", (message) => {

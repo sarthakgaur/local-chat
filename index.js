@@ -5,6 +5,7 @@ const cookieParser = require("cookie-parser");
 const app = express();
 const http = require("http").createServer(app);
 const io = require("socket.io")(http);
+const pool = require("./db");
 const path = require("path");
 const fs = require("fs");
 
@@ -19,6 +20,7 @@ const fs = require("fs");
 // TODO add Multer. Done.
 // TODO Setup Views. Done.
 // TODO Add a link if chat message contains a url. Done.
+// TODO Add a database to save last 100 messages. Done.
 
 let connections = new Map();
 let lastFileUploaded;
@@ -30,9 +32,9 @@ const storage = multer.diskStorage({
     let basename = path.basename(file.originalname);
     let time = Date.now();
     let extension = path.extname(file.originalname);
-    let nameOfFile = `${basename}-${time}${extension}`;
-    lastFileUploaded = { name: nameOfFile, type: file.mimetype }
-    cb(null, nameOfFile);
+    let name = `${basename}-${time}${extension}`;
+    lastFileUploaded = { name, type: file.mimetype };
+    cb(null, name);
   }
 });
 
@@ -77,12 +79,14 @@ io.on("connection", (socket) => {
   socket.on("userConnected", (username) => {
     connections.set(socket.id, username);
     io.emit("userConnected", { username, userList: getUsersList() });
+    sendOldMessages(socket);
   });
 
   socket.on("chatMessage", (body) => {
     let time = Date.now();
     let username = connections.get(socket.id);
     io.emit("chatMessage", { time, username, body });
+    insertMessage(time, username, body);
   });
 
   socket.on("disconnect", () => {
@@ -91,6 +95,32 @@ io.on("connection", (socket) => {
     io.emit("userDisconnected", { username, userList: getUsersList() });
   });
 });
+
+async function sendOldMessages(socket) {
+  try {
+    let query = `
+      SELECT message_time AS time, message_user AS username, message_text AS body
+      FROM messages;
+    `;
+    let oldMessages = await pool.query(query);
+    socket.emit("oldMessages", oldMessages.rows);
+  } catch (error) {
+    console.error(error.message);
+  }
+}
+
+async function insertMessage(time, username, body) {
+  try {
+    let query = `
+      INSERT INTO messages (message_time, message_user, message_text)
+      VALUES (to_timestamp($1 / 1000.0), $2, $3)
+      RETURNING *;
+    `;
+    await pool.query(query, [time, username, body]);
+  } catch (error) {
+    console.error(error.message);
+  }
+}
 
 http.listen(3000, () => {
   console.log("listening on *:3000");
