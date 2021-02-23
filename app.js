@@ -5,7 +5,7 @@ const cookieParser = require("cookie-parser");
 const app = express();
 const http = require("http").createServer(app);
 const io = require("socket.io")(http);
-const pool = require("./db");
+const pool = require("./config/database");
 const path = require("path");
 const fs = require("fs");
 
