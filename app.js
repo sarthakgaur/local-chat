@@ -21,7 +21,7 @@ const fs = require("fs");
 // TODO Setup Views. Done.
 // TODO Add a link if chat message contains a url. Done.
 // TODO Add a database to save last 100 messages. Done.
-// TODO Uploaded files and images should be rendered along with messages.
+// TODO Uploaded files and images should be rendered along with messages. Done.
 
 let connections = new Map();
 let lastFileUploaded;
@@ -61,7 +61,7 @@ app.get("/", (req, res) => {
 });
 
 app.post("/upload", (req, res) => {
-  upload(req, res, (err) => {
+  upload(req, res, async (err) => {
     if (err) {
       res.status(500).send({ message: "File upload failed." });
     } else if (req.file == undefined) {
@@ -70,54 +70,65 @@ app.post("/upload", (req, res) => {
       let time = Date.now();
       let username = connections.get(req.cookies["socket_id"]);
       let link = `/uploads/${lastFileUploaded.name}`;
+      await insertEvent(time, username, "fileUpload", { link, type: lastFileUploaded.type });
       res.status(200).send({ message: "File uploaded successfully." });
-      io.emit("fileUpload", { time, username, link, type: lastFileUploaded.type });
+      io.emit("fileUpload", { time, username, info: { link, type: lastFileUploaded.type } });
     }
   });
 });
 
 io.on("connection", (socket) => {
   socket.on("userConnected", async (username) => {
+    let time = Date.now();
+    let userList = getUsersList();
     connections.set(socket.id, username);
     await sendOldMessages(socket);
-    io.emit("userConnected", { username, userList: getUsersList() });
+    await insertEvent(time, username, "userConnected", { userList });
+    io.emit("userConnected", { username, info: { userList } });
+  });
+
+  socket.on("disconnect", async () => {
+    let time = Date.now();
+    let username = connections.get(socket.id);
+    let userList = getUsersList();
+    connections.delete(socket.id);
+    await insertEvent(time, username, "disconnect", { userList })
+    io.emit("userDisconnected", { username, info: { userList } });
   });
 
   socket.on("chatMessage", async (body) => {
     let time = Date.now();
     let username = connections.get(socket.id);
-    await insertMessage(time, username, body);
-    io.emit("chatMessage", { time, username, body });
-  });
-
-  socket.on("disconnect", () => {
-    let username = connections.get(socket.id);
-    connections.delete(socket.id);
-    io.emit("userDisconnected", { username, userList: getUsersList() });
+    await insertEvent(time, username, "chatMessage", { body })
+    io.emit("chatMessage", { time, username, info: { body } });
   });
 });
 
 async function sendOldMessages(socket) {
   try {
     let query = `
-      SELECT message_time AS time, message_user AS username, message_text AS body
-      FROM messages;
+      SELECT event_time AS time,
+        event_user AS username,
+        event_type AS type, 
+        event_info AS info
+      FROM events;
     `;
     let oldMessages = await pool.query(query);
+    console.log(oldMessages.rows);
     socket.emit("oldMessages", oldMessages.rows);
   } catch (error) {
     console.error(error.message);
   }
 }
 
-async function insertMessage(time, username, body) {
+async function insertEvent(time, username, type, info) {
   try {
     let query = `
-      INSERT INTO messages (message_time, message_user, message_text)
-      VALUES (to_timestamp($1 / 1000.0), $2, $3)
+      INSERT INTO events (event_time, event_user, event_type, event_info)
+      VALUES (to_timestamp($1 / 1000.0), $2, $3, $4)
       RETURNING *;
     `;
-    await pool.query(query, [time, username, body]);
+    await pool.query(query, [time, username, type, info]);
   } catch (error) {
     console.error(error.message);
   }

@@ -65,12 +65,49 @@ function displayUsers() {
   window.alert(message);
 }
 
-function appendMessage(message) {
+function handleUserConnected(message) {
+  let item = document.createElement("li");
+  members = message.info.userList;
+  item.textContent = `${message.username} has joined the chat.`;
+  messages.appendChild(item);
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+function handleUserDisconnected(message) {
+  let item = document.createElement("li");
+  members = message.info.userList;
+  item.textContent = `${message.username} has left the chat.`;
+  messages.appendChild(item);
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+function handleChatMessage(message) {
   let item = document.createElement("li");
   let time = new Date(message.time).toLocaleTimeString();
-  let node = createMessageBody(message.body);
+  let node = createMessageBody(message.info.body);
   item.textContent = `${time} > ${message.username}:\u00A0`;
   item.appendChild(node);
+  messages.appendChild(item);
+  window.scrollTo(0, document.body.scrollHeight);
+}
+
+function handleFileUpload(message) {
+  let item = document.createElement("li");
+  let time = new Date(message.time).toLocaleTimeString();
+  let a = document.createElement("a");
+  a.href = message.info.link;
+  a.target = "_blank";
+  if (message.info.type.split("/")[0] === "image") {
+    item.textContent = `${time} > ${message.username}: `;
+    let img = document.createElement("img");
+    img.src = message.info.link;
+    a.appendChild(img);
+  } else {
+    item.textContent = `${time} > ${message.username} uploaded a\u00A0`;
+    a.textContent = "file";
+  }
+
+  item.appendChild(a);
   messages.appendChild(item);
   window.scrollTo(0, document.body.scrollHeight);
 }
@@ -89,7 +126,8 @@ if (username) {
     }
     if (file) {
       let formData = new FormData();
-      formData.append("chatFile", file); fetch("/upload", { method: "POST",
+      formData.append("chatFile", file); fetch("/upload", {
+        method: "POST",
         body: formData
       });
       document.getElementById("file").value = "";
@@ -102,48 +140,38 @@ if (username) {
     socket.emit("userConnected", username);
   });
 
+  socket.on("oldMessages", (messages) => {
+    messages.forEach((message) => {
+      switch (message.type) {
+        case "userConnected":
+          handleUserConnected(message);
+          break;
+        case "userDisconnected":
+          handleUserDisconnected(message);
+          break;
+        case "chatMessage":
+          handleChatMessage(message);
+          break;
+        case "fileUpload":
+          handleFileUpload(message);
+          break;
+      }
+    });
+  });
+
   socket.on("userConnected", (message) => {
-    let item = document.createElement("li");
-    members = message.userList;
-    item.textContent = `${message.username} has joined the chat.`;
-    messages.appendChild(item);
-    window.scrollTo(0, document.body.scrollHeight);
+    handleUserConnected(message);
   });
 
   socket.on("userDisconnected", (message) => {
-    let item = document.createElement("li");
-    members = message.userList;
-    item.textContent = `${message.username} has left the chat.`;
-    messages.appendChild(item);
-    window.scrollTo(0, document.body.scrollHeight);
-  });
-
-  socket.on("oldMessages", (messages) => {
-    messages.forEach(appendMessage);
+    handleUserDisconnected(message);
   });
 
   socket.on("chatMessage", (message) => {
-    appendMessage(message);
+    handleChatMessage(message);
   });
 
   socket.on("fileUpload", (message) => {
-    let item = document.createElement("li");
-    let time = new Date(message.time).toLocaleTimeString();
-    let a = document.createElement("a");
-    a.href = message.link;
-    a.target = "_blank";
-    if (message.type.split("/")[0] === "image") {
-      item.textContent = `${time} > ${message.username}: `;
-      let img = document.createElement("img");
-      img.src = message.link;
-      a.appendChild(img);
-    } else {
-      item.textContent = `${time} > ${message.username} uploaded a\u00A0`;
-      a.textContent = "file";
-    }
-
-    item.appendChild(a);
-    messages.appendChild(item);
-    window.scrollTo(0, document.body.scrollHeight);
+    handleFileUpload(message)
   });
 }
