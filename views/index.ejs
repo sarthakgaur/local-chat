@@ -8,6 +8,26 @@
 </head>
 
 <body>
+  <div id="usernameInputModal" class="modal">
+    <div class="modal-content">
+      <div id="usernameInputError"></div>
+      <form id="usernameInputForm">
+        <table>
+          <tbody>
+            <tr>
+              <td><label id="usernameInputLabel" for="usernameInput">Username:</label></td>
+              <td><input id="usernameInput" required /></td>
+            </tr>
+            <tr>
+              <td></td>
+              <td><input type="submit" value="Log In"></td>
+            </tr>
+          </tbody>
+        </table>
+      </form>
+    </div>
+  </div>
+
   <div id="topbar">
     <h1>Local Chat</h1>
     <button id="user-list" onclick="displayUsers()">User List</button>

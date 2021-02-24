@@ -1,14 +1,41 @@
 let socket = io();
+let members = [];
+let username = localStorage.getItem("username");
+
 let messages = document.getElementById("messages");
 let form = document.getElementById("form");
 let input = document.getElementById("input");
-let username = localStorage.getItem("username") || getUsername(true);
-let members = [];
 
-function getUsername(firstTime) {
-  let message = firstTime ? "Username:" : "Username not valid.\n\nUsername:";
-  return window.prompt(message);
-}
+let usernameInputModal = document.getElementById("usernameInputModal");
+let usernameInputForm = document.getElementById("usernameInputForm");
+let usernameInput = document.getElementById("usernameInput");
+let usernameInputError = document.getElementById("usernameInputError");
+
+usernameInputForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (usernameInput.value) {
+    username = usernameInput.value;
+    socket.emit("userConnected", username);
+  }
+});
+
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  let file = document.getElementById("file").files[0];
+  if (input.value) {
+    socket.emit("chatMessage", input.value);
+    input.value = "";
+  }
+  if (file) {
+    let formData = new FormData();
+    formData.append("chatFile", file); fetch("/upload", {
+      method: "POST",
+      body: formData
+    });
+    document.getElementById("file").value = "";
+  }
+  handleFileSelect();
+});
 
 function handleBrowse() {
   document.getElementById("file").click();
@@ -118,34 +145,20 @@ function handleFileUpload(event) {
   window.scrollTo(0, document.body.scrollHeight);
 }
 
-form.addEventListener("submit", (e) => {
-  e.preventDefault();
-  let file = document.getElementById("file").files[0];
-  if (input.value) {
-    socket.emit("chatMessage", input.value);
-    input.value = "";
-  }
-  if (file) {
-    let formData = new FormData();
-    formData.append("chatFile", file); fetch("/upload", {
-      method: "POST",
-      body: formData
-    });
-    document.getElementById("file").value = "";
-  }
-  handleFileSelect();
-});
-
 socket.on("connect", () => {
-  socket.emit("userConnected", username);
+  if (username) {
+    socket.emit("userConnected", username);
+  } else {
+    usernameInputModal.style.display = "flex";
+  }
 });
 
 socket.on("usernameError", () => {
-  username = getUsername(false);
-  socket.emit("userConnected", username);
-})
+  usernameInputError.textContent = "Username not valid.";
+});
 
 socket.on("userVerified", (event) => {
+  usernameInputModal.style.display = "none";
   document.cookie = `socket_id=${socket.id};SameSite=Strict`;
   username = event.username;
   localStorage.setItem("username", username);
