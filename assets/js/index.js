@@ -11,6 +11,20 @@ let usernameInputForm = document.getElementById("usernameInputForm");
 let usernameInput = document.getElementById("usernameInput");
 let usernameInputError = document.getElementById("usernameInputError");
 
+let userListModal = document.getElementById("userListModal");
+let userList = document.getElementById("userList");
+let userListClose = document.getElementById("userListClose");
+
+window.addEventListener("click", (e) => {
+  if (e.target === userListModal) {
+    userListModal.style.display = "none";
+  }
+});
+
+userListClose.addEventListener("click", (e) => {
+  userListModal.style.display = "none";
+});
+
 usernameInputForm.addEventListener("submit", (e) => {
   e.preventDefault();
   if (usernameInput.value) {
@@ -90,12 +104,13 @@ function handleFileSelect() {
 }
 
 function displayUsers() {
-  let userList = "\n\n"
+  userList.textContent = "";
   for (let i = 0; i < members.length; i++) {
-    userList += `${i + 1}. ${members[i]}\n`;
+    let li = document.createElement("li");
+    li.textContent = members[i];
+    userList.appendChild(li);
   }
-  let message = `Users List: ${userList}`;
-  window.alert(message);
+  userListModal.style.display = "flex";
 }
 
 function handleUserConnected(event) {

@@ -24,6 +24,7 @@ const fs = require("fs");
 // TODO Uploaded files and images should be rendered along with messages. Done.
 // TODO Username must be unique. Done.
 // TODO Add modal to client. Done.
+// TODO Add modal to list users. Done.
 // TODO Add logging support.
 
 let connections = new Map();
