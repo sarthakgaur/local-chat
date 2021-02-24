@@ -1,8 +1,14 @@
+let socket = io();
 let messages = document.getElementById("messages");
 let form = document.getElementById("form");
 let input = document.getElementById("input");
-let username = localStorage.getItem("username") || window.prompt("Username:");
+let username = localStorage.getItem("username") || getUsername(true);
 let members = [];
+
+function getUsername(firstTime) {
+  let message = firstTime ? "Username:" : "Username not valid.\n\nUsername:";
+  return window.prompt(message);
+}
 
 function handleBrowse() {
   document.getElementById("file").click();
@@ -65,45 +71,45 @@ function displayUsers() {
   window.alert(message);
 }
 
-function handleUserConnected(message) {
+function handleUserConnected(event) {
   let item = document.createElement("li");
-  members = message.info.userList;
-  item.textContent = `${message.username} has joined the chat.`;
+  members = event.info.userList;
+  item.textContent = `${event.username} has joined the chat.`;
   messages.appendChild(item);
   window.scrollTo(0, document.body.scrollHeight);
 }
 
-function handleUserDisconnected(message) {
+function handleUserDisconnected(event) {
   let item = document.createElement("li");
-  members = message.info.userList;
-  item.textContent = `${message.username} has left the chat.`;
+  members = event.info.userList;
+  item.textContent = `${event.username} has left the chat.`;
   messages.appendChild(item);
   window.scrollTo(0, document.body.scrollHeight);
 }
 
-function handleChatMessage(message) {
+function handleChatMessage(event) {
   let item = document.createElement("li");
-  let time = new Date(message.time).toLocaleTimeString();
-  let node = createMessageBody(message.info.body);
-  item.textContent = `${time} > ${message.username}:\u00A0`;
+  let time = new Date(event.time).toLocaleTimeString();
+  let node = createMessageBody(event.info.body);
+  item.textContent = `${time} > ${event.username}:\u00A0`;
   item.appendChild(node);
   messages.appendChild(item);
   window.scrollTo(0, document.body.scrollHeight);
 }
 
-function handleFileUpload(message) {
+function handleFileUpload(event) {
   let item = document.createElement("li");
-  let time = new Date(message.time).toLocaleTimeString();
+  let time = new Date(event.time).toLocaleTimeString();
   let a = document.createElement("a");
-  a.href = message.info.link;
+  a.href = event.info.link;
   a.target = "_blank";
-  if (message.info.type.split("/")[0] === "image") {
-    item.textContent = `${time} > ${message.username}: `;
+  if (event.info.type.split("/")[0] === "image") {
+    item.textContent = `${time} > ${event.username}: `;
     let img = document.createElement("img");
-    img.src = message.info.link;
+    img.src = event.info.link;
     a.appendChild(img);
   } else {
-    item.textContent = `${time} > ${message.username} uploaded a\u00A0`;
+    item.textContent = `${time} > ${event.username} uploaded a\u00A0`;
     a.textContent = "file";
   }
 
@@ -112,66 +118,70 @@ function handleFileUpload(message) {
   window.scrollTo(0, document.body.scrollHeight);
 }
 
-if (username) {
-  let socket = io();
-
-  localStorage.setItem("username", username);
-
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    let file = document.getElementById("file").files[0];
-    if (input.value) {
-      socket.emit("chatMessage", input.value);
-      input.value = "";
-    }
-    if (file) {
-      let formData = new FormData();
-      formData.append("chatFile", file); fetch("/upload", {
-        method: "POST",
-        body: formData
-      });
-      document.getElementById("file").value = "";
-    }
-    handleFileSelect();
-  });
-
-  socket.on("connect", () => {
-    document.cookie = `socket_id=${socket.id};SameSite=Strict`;
-    socket.emit("userConnected", username);
-  });
-
-  socket.on("oldMessages", (messages) => {
-    messages.forEach((message) => {
-      switch (message.type) {
-        case "userConnected":
-          handleUserConnected(message);
-          break;
-        case "userDisconnected":
-          handleUserDisconnected(message);
-          break;
-        case "chatMessage":
-          handleChatMessage(message);
-          break;
-        case "fileUpload":
-          handleFileUpload(message);
-          break;
-      }
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  let file = document.getElementById("file").files[0];
+  if (input.value) {
+    socket.emit("chatMessage", input.value);
+    input.value = "";
+  }
+  if (file) {
+    let formData = new FormData();
+    formData.append("chatFile", file); fetch("/upload", {
+      method: "POST",
+      body: formData
     });
-  });
+    document.getElementById("file").value = "";
+  }
+  handleFileSelect();
+});
 
-  socket.on("userConnected", (message) => {
-    handleUserConnected(message);
-  });
+socket.on("connect", () => {
+  socket.emit("userConnected", username);
+});
 
-  socket.on("userDisconnected", (message) => {
-    handleUserDisconnected(message);
-  });
+socket.on("usernameError", () => {
+  username = getUsername(false);
+  socket.emit("userConnected", username);
+})
 
-  socket.on("chatMessage", (message) => {
-    handleChatMessage(message);
-  });
+socket.on("userVerified", (event) => {
+  document.cookie = `socket_id=${socket.id};SameSite=Strict`;
+  username = event.username;
+  localStorage.setItem("username", username);
+});
 
-  socket.on("fileUpload", (message) => {
-    handleFileUpload(message)
+socket.on("oldEvents", (events) => {
+  events.forEach((event) => {
+    switch (event.type) {
+      case "userConnected":
+        handleUserConnected(event);
+        break;
+      case "userDisconnected":
+        handleUserDisconnected(event);
+        break;
+      case "chatMessage":
+        handleChatMessage(event);
+        break;
+      case "fileUpload":
+        handleFileUpload(event);
+        break;
+    }
   });
-}
+});
+
+socket.on("userConnected", (event) => {
+  handleUserConnected(event);
+});
+
+socket.on("userDisconnected", (event) => {
+  handleUserDisconnected(event);
+});
+
+socket.on("chatMessage", (event) => {
+  handleChatMessage(event);
+});
+
+socket.on("fileUpload", (event) => {
+  handleFileUpload(event)
+});
