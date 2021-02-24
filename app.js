@@ -71,7 +71,7 @@ app.post("/upload", (req, res) => {
     } else if (req.file == undefined) {
       res.status(500).send({ message: "No file Selected." });
     } else {
-      handleFileUpload();
+      handleFileUpload(req, res);
     }
   });
 });
@@ -127,7 +127,7 @@ async function handleChatMessage(socket, body) {
   io.to("chatRoom").emit("chatMessage", { time, username, info: { body } });
 }
 
-async function handleFileUpload() {
+async function handleFileUpload(req, res) {
   let time = Date.now();
   let username = connections.get(req.cookies["socket_id"]);
   let link = `/uploads/${lastFileUploaded.name}`;
