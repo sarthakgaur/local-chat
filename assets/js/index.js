@@ -6,34 +6,21 @@ let messages = document.getElementById("messages");
 let form = document.getElementById("form");
 let input = document.getElementById("input");
 
-let usernameInputModal = document.getElementById("usernameInputModal");
 let usernameInputForm = document.getElementById("usernameInputForm");
 let usernameInput = document.getElementById("usernameInput");
-let usernameInputError = document.getElementById("usernameInputError");
-
-let userListModal = document.getElementById("userListModal");
 let userList = document.getElementById("userList");
-let userListClose = document.getElementById("userListClose");
-
-window.addEventListener("click", (e) => {
-  if (e.target === userListModal) {
-    userListModal.style.display = "none";
-  }
-});
-
-userListClose.addEventListener("click", (e) => {
-  userListModal.style.display = "none";
-});
 
 usernameInputForm.addEventListener("submit", (e) => {
   e.preventDefault();
   if (usernameInput.value) {
     username = usernameInput.value;
     socket.emit("userConnected", username);
+  } else {
+    usernameInput.classList.add("is-invalid");
   }
 });
 
-form.addEventListener("submit", (e) => {
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
   let file = document.getElementById("file").files[0];
   if (input.value) {
@@ -42,14 +29,76 @@ form.addEventListener("submit", (e) => {
   }
   if (file) {
     let formData = new FormData();
-    formData.append("chatFile", file); fetch("/upload", {
-      method: "POST",
-      body: formData
-    });
+    let browse = document.getElementById("browse");
+    let spinner = createSpinner();
+
+    formData.append("chatFile", file);
+    browse.textContent = "\u00A0Uploading...";
+    browse.insertBefore(spinner, browse.firstChild);
     document.getElementById("file").value = "";
+
+    let response = await fetch("/upload", { method: "POST", body: formData });
+    if (response.status === 200) {
+      browse.textContent = "Upload";
+      $("#liveToast").toast("show");
+    }
   }
-  handleFileSelect();
 });
+
+function createSpinner() {
+  let spinner = document.createElement("span");
+  spinner.classList.add("spinner-border");
+  spinner.classList.add("spinner-border-sm");
+  return spinner;
+}
+
+function createCard(event, contentNode) {
+  let card = document.createElement("div");
+  let cardBody = document.createElement("div");
+
+  card.classList.add("card");
+  card.classList.add("bg-light");
+  card.classList.add("mb-3");
+  card.classList.add("card-width");
+
+  let config = {
+    header: false,
+    footer: false,
+  };
+
+  switch (event.type) {
+    case "userConnected":
+    case "userDisconnected":
+      break;
+    case "chatMessage":
+    case "fileUpload":
+      config.header = true;
+      config.footer = true;
+      break;
+  }
+
+  if (config.header) {
+    let cardHeader = document.createElement("h5");
+    cardHeader.classList.add("card-title");
+    cardHeader.textContent = event.username;
+    cardBody.appendChild(cardHeader);
+  }
+
+  let div  = document.createElement("div");
+  div.appendChild(contentNode);
+  cardBody.appendChild(div);
+  cardBody.classList.add("card-body");
+  card.appendChild(cardBody);
+
+  if (config.footer) {
+    let cardFooter = document.createElement("small");
+    cardFooter.classList.add("text-muted");
+    cardFooter.textContent = new Date(event.time).toLocaleTimeString();
+    cardBody.appendChild(cardFooter);
+  }
+
+  return card;
+}
 
 function handleBrowse() {
   document.getElementById("file").click();
@@ -107,56 +156,52 @@ function displayUsers() {
   userList.textContent = "";
   for (let i = 0; i < members.length; i++) {
     let li = document.createElement("li");
-    li.textContent = members[i];
+    li.classList.add("list-group-item");
+    li.textContent = `${i + 1}. ${members[i]}`;
     userList.appendChild(li);
   }
-  userListModal.style.display = "flex";
+  $("#userListModal").modal("show");
 }
 
 function handleUserConnected(event) {
-  let item = document.createElement("li");
   members = event.info.userList;
-  item.textContent = `${event.username} has joined the chat.`;
-  messages.appendChild(item);
+  let contentNode = document.createTextNode(`${event.username} has joined the chat.`);
+  let card = createCard(event, contentNode);
+  messages.appendChild(card);
   window.scrollTo(0, document.body.scrollHeight);
 }
 
 function handleUserDisconnected(event) {
-  let item = document.createElement("li");
   members = event.info.userList;
-  item.textContent = `${event.username} has left the chat.`;
-  messages.appendChild(item);
+  let contentNode = document.createTextNode(`${event.username} has left the chat.`);
+  let card = createCard(event, contentNode);
+  messages.appendChild(card);
   window.scrollTo(0, document.body.scrollHeight);
 }
 
 function handleChatMessage(event) {
-  let item = document.createElement("li");
-  let time = new Date(event.time).toLocaleTimeString();
-  let node = createMessageBody(event.info.body);
-  item.textContent = `${time} > ${event.username}:\u00A0`;
-  item.appendChild(node);
-  messages.appendChild(item);
+  let contentNode = createMessageBody(event.info.body);
+  let card = createCard(event, contentNode);
+  messages.appendChild(card);
   window.scrollTo(0, document.body.scrollHeight);
 }
 
 function handleFileUpload(event) {
-  let item = document.createElement("li");
-  let time = new Date(event.time).toLocaleTimeString();
-  let a = document.createElement("a");
-  a.href = event.info.link;
-  a.target = "_blank";
+  let contentNode = document.createElement("a");
+  contentNode.href = event.info.link;
+  contentNode.target = "_blank";
+
   if (event.info.type.split("/")[0] === "image") {
-    item.textContent = `${time} > ${event.username}: `;
     let img = document.createElement("img");
+    img.classList.add("img-fluid");
     img.src = event.info.link;
-    a.appendChild(img);
+    contentNode.appendChild(img);
   } else {
-    item.textContent = `${time} > ${event.username} uploaded a\u00A0`;
-    a.textContent = "file";
+    contentNode.textContent = "Uploaded a file.";
   }
 
-  item.appendChild(a);
-  messages.appendChild(item);
+  let card = createCard(event, contentNode)
+  messages.appendChild(card);
   window.scrollTo(0, document.body.scrollHeight);
 }
 
@@ -164,16 +209,18 @@ socket.on("connect", () => {
   if (username) {
     socket.emit("userConnected", username);
   } else {
-    usernameInputModal.style.display = "flex";
+    $("#usernameInputModal").modal("show");
   }
 });
 
 socket.on("usernameError", () => {
-  usernameInputError.textContent = "Username not valid.";
+  usernameInput.classList.add("is-invalid");
 });
 
 socket.on("userVerified", (event) => {
-  usernameInputModal.style.display = "none";
+  usernameInput.classList.remove("is-invalid");
+  usernameInput.classList.add("is-valid");
+  $("#usernameInputModal").modal("hide");
   document.cookie = `socket_id=${socket.id};SameSite=Strict`;
   username = event.username;
   localStorage.setItem("username", username);

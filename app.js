@@ -25,6 +25,7 @@ const fs = require("fs");
 // TODO Username must be unique. Done.
 // TODO Add modal to client. Done.
 // TODO Add modal to list users. Done.
+// TODO Add bootstrap.
 // TODO Add logging support.
 
 let connections = new Map();
@@ -60,8 +61,13 @@ app.use(express.static("./public"));
 // Static Files
 app.use("/assets", express.static("assets"));
 
+// Bootstrap Files
+app.use("/js", express.static("./node_modules/bootstrap/dist/js"));
+app.use("/js", express.static("./node_modules/jquery/dist"));
+app.use("/css", express.static("./node_modules/bootstrap/dist/css"));
+
 app.get("/", (req, res) => {
-  res.render("index");
+  res.sendFile(path.join(__dirname, "views/index.html"));
 });
 
 app.post("/upload", (req, res) => {
@@ -80,15 +86,18 @@ io.on("connection", (socket) => {
   socket.on("userConnected", async (username) => {
     if (isValidUsername(socket, username)) {
       let time = Date.now();
+      let type = "userConnected";
       connections.set(socket.id, username);
       let userList = Array.from(getUsersSet());
+      let info = { userList };
+      let event = { time, username, type, info };
       socket.join("chatRoom");
       socket.on("disconnect", () => { handleDisconnect(socket); });
       socket.on("chatMessage", (body) => { handleChatMessage(socket, body); });
-      socket.emit("userVerified", { username });
+      socket.emit("userVerified", event);
       await sendOldEvents(socket);
-      await insertEvent(time, username, "userConnected", { userList });
-      io.to("chatRoom").emit("userConnected", { username, info: { userList } });
+      await insertEvent(event);
+      io.to("chatRoom").emit("userConnected", event);
     } else {
       socket.emit("usernameError", { username });
     }
@@ -114,25 +123,33 @@ function isValidUsername(socket, username) {
 async function handleDisconnect(socket) {
   let time = Date.now();
   let username = connections.get(socket.id);
+  let type = "disconnect";
   connections.delete(socket.id);
   let userList = Array.from(getUsersSet());
-  await insertEvent(time, username, "disconnect", { userList })
-  io.to("chatRoom").emit("userDisconnected", { username, info: { userList } });
+  let info = { userList };
+  let event = { time, username, type, info };
+  await insertEvent(event)
+  io.to("chatRoom").emit("userDisconnected", event);
 }
 
 async function handleChatMessage(socket, body) {
   let time = Date.now();
   let username = connections.get(socket.id);
-  await insertEvent(time, username, "chatMessage", { body })
-  io.to("chatRoom").emit("chatMessage", { time, username, info: { body } });
+  let type = "chatMessage";
+  let info = { body };
+  let event = { time, username, type, info };
+  await insertEvent(event)
+  io.to("chatRoom").emit("chatMessage", event);
 }
 
 async function handleFileUpload(req, res) {
   let time = Date.now();
   let username = connections.get(req.cookies["socket_id"]);
   let link = `/uploads/${lastFileUploaded.name}`;
-  let event = { time, username, info: { link, type: lastFileUploaded.type } };
-  await insertEvent(time, username, "fileUpload", event.info);
+  let type = "fileUpload";
+  let info = { link, type: lastFileUploaded.type };
+  let event = { time, username, type, info };
+  await insertEvent(event);
   res.status(200).send({ message: "File uploaded successfully." });
   io.to("chatRoom").emit("fileUpload", event);
 }
@@ -153,7 +170,7 @@ async function sendOldEvents(socket) {
   }
 }
 
-async function insertEvent(time, username, type, info) {
+async function insertEvent({ time, username, type, info }) {
   try {
     let query = `
       INSERT INTO events (event_time, event_user, event_type, event_info)
