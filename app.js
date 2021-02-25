@@ -1,5 +1,4 @@
 const express = require("express");
-const ejs = require("ejs");
 const multer = require("multer");
 const cookieParser = require("cookie-parser");
 const app = express();
@@ -25,7 +24,7 @@ const fs = require("fs");
 // TODO Username must be unique. Done.
 // TODO Add modal to client. Done.
 // TODO Add modal to list users. Done.
-// TODO Add bootstrap.
+// TODO Add bootstrap. Done.
 // TODO Add logging support.
 
 let connections = new Map();
@@ -48,9 +47,6 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage
 }).single("chatFile");
-
-// EJS
-app.set("view engine", "ejs")
 
 // Parse Browser cookies
 app.use(cookieParser());
@@ -145,8 +141,8 @@ async function handleChatMessage(socket, body) {
 async function handleFileUpload(req, res) {
   let time = Date.now();
   let username = connections.get(req.cookies["socket_id"]);
-  let link = `/uploads/${lastFileUploaded.name}`;
   let type = "fileUpload";
+  let link = `/uploads/${lastFileUploaded.name}`;
   let info = { link, type: lastFileUploaded.type };
   let event = { time, username, type, info };
   await insertEvent(event);
