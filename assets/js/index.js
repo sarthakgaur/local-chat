@@ -8,10 +8,10 @@ let input = document.getElementById("input");
 
 let usernameInputForm = document.getElementById("usernameInputForm");
 let usernameInput = document.getElementById("usernameInput");
-let userList = document.getElementById("userList");
 
 usernameInputForm.addEventListener("submit", (e) => {
   e.preventDefault();
+
   if (usernameInput.value) {
     username = usernameInput.value;
     socket.emit("userConnected", username);
@@ -22,24 +22,28 @@ usernameInputForm.addEventListener("submit", (e) => {
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
-  let file = document.getElementById("file").files[0];
+  let selectFileButton = document.getElementById("selectFileButton");
+  let file = selectFileButton.files[0];
+
   if (input.value) {
     socket.emit("chatMessage", input.value);
     input.value = "";
   }
+
   if (file) {
-    let formData = new FormData();
-    let browse = document.getElementById("browse");
+    let uploadButton = document.getElementById("uploadButton");
     let spinner = createSpinner();
+    let formData = new FormData();
 
     formData.append("chatFile", file);
-    browse.textContent = "\u00A0Uploading...";
-    browse.insertBefore(spinner, browse.firstChild);
-    document.getElementById("file").value = "";
+    uploadButton.textContent = "\u00A0Uploading...";
+    uploadButton.insertBefore(spinner, uploadButton.firstChild);
+    selectFileButton.value = "";
 
     let response = await fetch("/upload", { method: "POST", body: formData });
+
     if (response.status === 200) {
-      browse.textContent = "Upload";
+      uploadButton.textContent = "Upload";
       $("#liveToast").toast("show");
     }
   }
@@ -60,48 +64,45 @@ function createCard(event, contentNode) {
   card.classList.add("bg-light");
   card.classList.add("mb-3");
   card.classList.add("card-width");
+  cardBody.classList.add("card-body");
 
   let config = {
-    header: false,
-    footer: false,
+    title: false,
+    time: false,
   };
 
   switch (event.type) {
-    case "userConnected":
-    case "userDisconnected":
-      break;
     case "chatMessage":
     case "fileUpload":
-      config.header = true;
-      config.footer = true;
+      config.title = true;
+      config.time = true;
       break;
   }
 
-  if (config.header) {
-    let cardHeader = document.createElement("h5");
-    cardHeader.classList.add("card-title");
-    cardHeader.textContent = event.username;
-    cardBody.appendChild(cardHeader);
+  if (config.title) {
+    let cardTitle = document.createElement("h5");
+    cardTitle.classList.add("card-title");
+    cardTitle.textContent = event.username;
+    cardBody.appendChild(cardTitle);
   }
 
-  let div  = document.createElement("div");
+  let div = document.createElement("div");
   div.appendChild(contentNode);
   cardBody.appendChild(div);
-  cardBody.classList.add("card-body");
   card.appendChild(cardBody);
 
-  if (config.footer) {
-    let cardFooter = document.createElement("small");
-    cardFooter.classList.add("text-muted");
-    cardFooter.textContent = new Date(event.time).toLocaleTimeString();
-    cardBody.appendChild(cardFooter);
+  if (config.time) {
+    let cardTime = document.createElement("small");
+    cardTime.classList.add("text-muted");
+    cardTime.textContent = new Date(event.time).toLocaleTimeString();
+    cardBody.appendChild(cardTime);
   }
 
   return card;
 }
 
-function handleBrowse() {
-  document.getElementById("file").click();
+function handleUploadButton() {
+  document.getElementById("selectFileButton").click();
 }
 
 function createMessageBody(text) {
@@ -142,24 +143,27 @@ function createMessageBody(text) {
   return container;
 }
 
-function handleFileSelect() {
-  let fileInput = document.getElementById("file");
-  let browseButton = document.getElementById("browse");
-  if (fileInput.files.length > 0) {
-    browseButton.textContent = "1 File Selected"
+function handleUploadButtonLabel() {
+  let selectFileButton = document.getElementById("selectFileButton");
+  let uploadButton = document.getElementById("uploadButton");
+  if (selectFileButton.files.length > 0) {
+    uploadButton.textContent = "1 File Selected"
   } else {
-    browseButton.textContent = "Browse";
+    uploadButton.textContent = "Upload";
   }
 }
 
 function displayUsers() {
+  let userList = document.getElementById("userList");
   userList.textContent = "";
+
   for (let i = 0; i < members.length; i++) {
     let li = document.createElement("li");
     li.classList.add("list-group-item");
     li.textContent = `${i + 1}. ${members[i]}`;
     userList.appendChild(li);
   }
+
   $("#userListModal").modal("show");
 }
 
@@ -221,8 +225,8 @@ socket.on("userVerified", (event) => {
   usernameInput.classList.remove("is-invalid");
   usernameInput.classList.add("is-valid");
   $("#usernameInputModal").modal("hide");
-  document.cookie = `socket_id=${socket.id};SameSite=Strict`;
   username = event.username;
+  document.cookie = `socket_id=${socket.id};SameSite=Strict`;
   localStorage.setItem("username", username);
 });
 

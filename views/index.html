@@ -19,7 +19,6 @@
     </div>
   </nav>
 
-  <!-- Modal -->
   <div class="modal fade" id="usernameInputModal" data-backdrop="static" data-keyboard="false" tabindex="-1"
     aria-labelledby="staticBackdropLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -42,12 +41,11 @@
     </div>
   </div>
 
-  <!-- Modal -->
   <div class="modal fade" id="userListModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel">Online Users</h5>
+          <h5 class="modal-title">Online Users</h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
@@ -67,9 +65,9 @@
   <form id="form" action="">
     <div class="input-group">
       <input id="input" class="form-control" autocomplete="off" />
-      <input id="file" type="file" class="hidden" oninput="handleFileSelect()" />
+      <input id="selectFileButton" type="file" class="d-none" oninput="handleUploadButtonLabel()" />
       <div class="input-group-append" role="group">
-        <button id="browse" class="btn btn-secondary" type="button" onclick="handleBrowse()">Upload</button>
+        <button id="uploadButton" class="btn btn-secondary" type="button" onclick="handleUploadButton()">Upload</button>
         <input class="btn btn-primary" type="submit" value="Send" />
       </div>
     </div>
