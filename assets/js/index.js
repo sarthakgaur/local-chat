@@ -220,13 +220,12 @@ socket.on("connect", () => {
   }
 });
 
-socket.on("usernameError", () => {
+socket.on("invalidUsername", () => {
   usernameInput.classList.add("is-invalid");
 });
 
 socket.on("userVerified", (event) => {
   usernameInput.classList.remove("is-invalid");
-  usernameInput.classList.add("is-valid");
   $("#usernameInputModal").modal("hide");
   username = event.username;
   document.cookie = `socket_id=${socket.id};SameSite=Strict`;

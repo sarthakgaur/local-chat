@@ -79,40 +79,40 @@ app.post("/upload", (req, res) => {
 });
 
 io.on("connection", (socket) => {
-  socket.on("userConnected", async (username) => {
-    if (isValidUsername(socket, username)) {
-      let time = Date.now();
-      let type = "userConnected";
-      connections.set(socket.id, username);
-      let userList = Array.from(getUsersSet());
-      let info = { userList };
-      let event = { time, username, type, info };
-      socket.join("chatRoom");
-      socket.on("disconnect", () => { handleDisconnect(socket); });
-      socket.on("chatMessage", (body) => { handleChatMessage(socket, body); });
-      socket.emit("userVerified", event);
-      await sendOldEvents(socket);
-      await insertEvent(event);
-      io.to("chatRoom").emit("userConnected", event);
-    } else {
-      socket.emit("usernameError", { username });
-    }
+  socket.on("userConnected", (username) => {
+    handleUserConnected(socket, username);
   });
 });
 
-function isValidUsername(socket, username) {
+function isValidUsername(username) {
   if (!username) {
     return false;
-  }
-
-  if (getUsersSet().has(username)) {
-    if (connections.get(socket.id) === username) {
-      return true;
-    } else {
-      return false;
-    }
+  } else if (getUsersSet().has(username)) {
+    return false;
   } else {
     return true;
+  }
+}
+
+async function handleUserConnected(socket, username) {
+  if (isValidUsername(username)) {
+    let time = Date.now();
+    let type = "userConnected";
+    connections.set(socket.id, username);
+    let userList = Array.from(getUsersSet());
+    let info = { userList };
+    let event = { time, username, type, info };
+
+    socket.join("chatRoom");
+    socket.on("disconnect", () => { handleDisconnect(socket); });
+    socket.on("chatMessage", (body) => { handleChatMessage(socket, body); });
+    socket.emit("userVerified", event);
+
+    await sendOldEvents(socket);
+    await insertEvent(event);
+    io.to("chatRoom").emit("userConnected", event);
+  } else {
+    socket.emit("invalidUsername", { username });
   }
 }
 
@@ -124,6 +124,7 @@ async function handleDisconnect(socket) {
   let userList = Array.from(getUsersSet());
   let info = { userList };
   let event = { time, username, type, info };
+
   await insertEvent(event)
   io.to("chatRoom").emit("userDisconnected", event);
 }
@@ -134,6 +135,7 @@ async function handleChatMessage(socket, body) {
   let type = "chatMessage";
   let info = { body };
   let event = { time, username, type, info };
+
   await insertEvent(event)
   io.to("chatRoom").emit("chatMessage", event);
 }
@@ -145,6 +147,7 @@ async function handleFileUpload(req, res) {
   let link = `/uploads/${lastFileUploaded.name}`;
   let info = { link, type: lastFileUploaded.type };
   let event = { time, username, type, info };
+
   await insertEvent(event);
   res.status(200).send({ message: "File uploaded successfully." });
   io.to("chatRoom").emit("fileUpload", event);
