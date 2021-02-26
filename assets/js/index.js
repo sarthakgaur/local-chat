@@ -62,8 +62,7 @@ function createCard(event, contentNode) {
 
   card.classList.add("card");
   card.classList.add("bg-light");
-  card.classList.add("mb-3");
-  card.classList.add("card-width");
+  card.classList.add("border-top-0")
   cardBody.classList.add("card-body");
 
   let config = {
@@ -82,21 +81,24 @@ function createCard(event, contentNode) {
   if (config.title) {
     let cardTitle = document.createElement("h5");
     cardTitle.classList.add("card-title");
+    cardTitle.classList.add("d-inline");
     cardTitle.textContent = event.username;
     cardBody.appendChild(cardTitle);
   }
 
-  let div = document.createElement("div");
-  div.appendChild(contentNode);
-  cardBody.appendChild(div);
-  card.appendChild(cardBody);
-
   if (config.time) {
     let cardTime = document.createElement("small");
     cardTime.classList.add("text-muted");
+    cardTime.classList.add("ml-2");
     cardTime.textContent = new Date(event.time).toLocaleTimeString();
     cardBody.appendChild(cardTime);
   }
+
+  let div = document.createElement("div");
+  div.classList.add("py-2");
+  div.appendChild(contentNode);
+  cardBody.appendChild(div);
+  card.appendChild(cardBody);
 
   return card;
 }
@@ -198,6 +200,7 @@ function handleFileUpload(event) {
   if (event.info.type.split("/")[0] === "image") {
     let img = document.createElement("img");
     img.classList.add("img-fluid");
+    img.classList.add("width-250");
     img.src = event.info.link;
     contentNode.appendChild(img);
   } else {
