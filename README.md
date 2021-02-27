@@ -22,4 +22,4 @@ A minimal chat application built using Node and Express. The front-end is writte
 
 ## Image
 
-![Screen Shot](/assets/images/client.png)
+![Screen Shot](/assets/images/client2.png)
