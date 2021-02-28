@@ -1,12 +1,15 @@
 const express = require("express");
 const multer = require("multer");
 const cookieParser = require("cookie-parser");
+const path = require("path");
+const fs = require("fs");
+const morgan = require("morgan");
+
+const db = require("./db/index");
+
 const app = express();
 const http = require("http").createServer(app);
 const io = require("socket.io")(http);
-const pool = require("./config/database");
-const path = require("path");
-const fs = require("fs");
 
 // TODO Add support for nicknames. Done.
 // TODO Broadcast message when a user connects or disconnects. Done.
@@ -25,7 +28,24 @@ const fs = require("fs");
 // TODO Add modal to client. Done.
 // TODO Add modal to list users. Done.
 // TODO Add bootstrap. Done.
-// TODO Add logging support.
+// TODO Add logging support. Done.
+
+// Logger Setup
+app.use(morgan("common"));
+
+// Parse Browser cookies
+app.use(cookieParser());
+
+// Public Folder
+app.use(express.static("./public"));
+
+// Static Files
+app.use("/assets", express.static("assets"));
+
+// Bootstrap Files
+app.use("/js", express.static("./node_modules/bootstrap/dist/js"));
+app.use("/js", express.static("./node_modules/jquery/dist"));
+app.use("/css", express.static("./node_modules/bootstrap/dist/css"));
 
 let connections = new Map();
 
@@ -45,20 +65,6 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage
 }).single("chatFile");
-
-// Parse Browser cookies
-app.use(cookieParser());
-
-// Public Folder
-app.use(express.static("./public"));
-
-// Static Files
-app.use("/assets", express.static("assets"));
-
-// Bootstrap Files
-app.use("/js", express.static("./node_modules/bootstrap/dist/js"));
-app.use("/js", express.static("./node_modules/jquery/dist"));
-app.use("/css", express.static("./node_modules/bootstrap/dist/css"));
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "views/index.html"));
@@ -116,10 +122,10 @@ async function handleUserConnected(socket, username) {
 }
 
 async function handleDisconnect(socket) {
+  let username = connections.get(socket.id);
   connections.delete(socket.id);
 
   let time = Date.now();
-  let username = connections.get(socket.id);
   let type = "disconnect";
   let userList = Array.from(getUsersSet());
   let info = { userList };
@@ -162,7 +168,7 @@ async function sendOldEvents(socket) {
         event_info AS info
       FROM events;
     `;
-    let oldEvents = await pool.query(query);
+    let oldEvents = await db.query(query);
     socket.emit("oldEvents", oldEvents.rows);
   } catch (error) {
     console.error(error.message);
@@ -176,7 +182,7 @@ async function insertEvent({ time, username, type, info }) {
       VALUES (to_timestamp($1 / 1000.0), $2, $3, $4)
       RETURNING *;
     `;
-    await pool.query(query, [time, username, type, info]);
+    await db.query(query, [time, username, type, info]);
   } catch (error) {
     console.error(error.message);
   }

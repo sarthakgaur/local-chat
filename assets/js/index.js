@@ -223,6 +223,7 @@ socket.on("connect", () => {
 });
 
 socket.on("invalidUsername", () => {
+  $("#usernameInputModal").modal("show");
   usernameInput.classList.add("is-invalid");
 });
 
