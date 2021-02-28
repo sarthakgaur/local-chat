@@ -37,7 +37,7 @@ app.use(morgan("common"));
 app.use(cookieParser());
 
 // Public Folder
-app.use(express.static("./public"));
+app.use("/public", express.static("public"));
 
 // Bootstrap Files
 app.use("/js", express.static("./node_modules/bootstrap/dist/js"));
