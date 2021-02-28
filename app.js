@@ -94,9 +94,10 @@ function isValidUsername(username) {
 
 async function handleUserConnected(socket, username) {
   if (isValidUsername(username)) {
+    connections.set(socket.id, username);
+
     let time = Date.now();
     let type = "userConnected";
-    connections.set(socket.id, username);
     let userList = Array.from(getUsersSet());
     let info = { userList };
     let event = { time, username, type, info };
@@ -115,10 +116,11 @@ async function handleUserConnected(socket, username) {
 }
 
 async function handleDisconnect(socket) {
+  connections.delete(socket.id);
+
   let time = Date.now();
   let username = connections.get(socket.id);
   let type = "disconnect";
-  connections.delete(socket.id);
   let userList = Array.from(getUsersSet());
   let info = { userList };
   let event = { time, username, type, info };

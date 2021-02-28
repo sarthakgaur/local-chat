@@ -22,6 +22,7 @@ usernameInputForm.addEventListener("submit", (e) => {
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
+
   let selectFileButton = document.getElementById("selectFileButton");
   let file = selectFileButton.files[0];
 
@@ -148,6 +149,7 @@ function createMessageBody(text) {
 function handleUploadButtonLabel() {
   let selectFileButton = document.getElementById("selectFileButton");
   let uploadButton = document.getElementById("uploadButton");
+
   if (selectFileButton.files.length > 0) {
     uploadButton.textContent = "1 File Selected"
   } else {
