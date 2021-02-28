@@ -39,9 +39,6 @@ app.use(cookieParser());
 // Public Folder
 app.use(express.static("./public"));
 
-// Static Files
-app.use("/assets", express.static("assets"));
-
 // Bootstrap Files
 app.use("/js", express.static("./node_modules/bootstrap/dist/js"));
 app.use("/js", express.static("./node_modules/jquery/dist"));
@@ -67,7 +64,7 @@ const upload = multer({
 }).single("chatFile");
 
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "views/index.html"));
+  res.sendFile(path.join(__dirname, "public/html/index.html"));
 });
 
 app.post("/upload", (req, res) => {
