@@ -28,17 +28,15 @@ const fs = require("fs");
 // TODO Add logging support.
 
 let connections = new Map();
-let lastFileUploaded;
 
 // Set Storage Engine
 const storage = multer.diskStorage({
   destination: "./public/uploads",
   filename: (req, file, cb) => {
-    let basename = path.basename(file.originalname);
-    let time = Date.now();
     let extension = path.extname(file.originalname);
+    let basename = path.basename(file.originalname, extension);
+    let time = Date.now();
     let name = `${basename}-${time}${extension}`;
-    lastFileUploaded = { name, type: file.mimetype };
     cb(null, name);
   }
 });
@@ -144,8 +142,8 @@ async function handleFileUpload(req, res) {
   let time = Date.now();
   let username = connections.get(req.cookies["socket_id"]);
   let type = "fileUpload";
-  let link = `/uploads/${lastFileUploaded.name}`;
-  let info = { link, type: lastFileUploaded.type };
+  let link = `/uploads/${req.file.filename}`;
+  let info = { link, type: req.file.mimetype };
   let event = { time, username, type, info };
 
   await insertEvent(event);
