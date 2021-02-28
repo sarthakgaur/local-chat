@@ -147,7 +147,7 @@ async function handleFileUpload(req, res) {
   let time = Date.now();
   let username = connections.get(req.cookies["socket_id"]);
   let type = "fileUpload";
-  let link = `/uploads/${req.file.filename}`;
+  let link = `/public/uploads/${req.file.filename}`;
   let info = { link, type: req.file.mimetype };
   let event = { time, username, type, info };
 
