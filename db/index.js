@@ -1,11 +1,12 @@
 const Pool = require("pg").Pool;
+require("dotenv").config();
 
 let pool = new Pool({
-  user: "dv",
-  password: process.env.password,
-  host: "localhost",
-  port: 5432,
-  database: "local_chat"
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  database: process.env.DB_DATABASE
 });
 
 async function query(text, params) {
