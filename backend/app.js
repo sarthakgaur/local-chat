@@ -185,8 +185,8 @@ async function insertEvent({ time, username, type, info }) {
   }
 }
 
-http.listen(3000, () => {
-  console.log("listening on *:3000");
+http.listen(3001, () => {
+  console.log("listening on *:3001");
 });
 
 function getUsersSet() {
