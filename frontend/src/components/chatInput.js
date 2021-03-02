@@ -1,18 +1,20 @@
 import React, { Fragment } from 'react';
+import Form from 'react-bootstrap/Form';
+import InputGroup from 'react-bootstrap/InputGroup';
+import FormControl from 'react-bootstrap/FormControl';
 
 const ChatInput = () => {
   return (
     <Fragment>
-      <form id="chatForm" className="fixed-bottom">
-        <div className="input-group">
-          <input id="chatInput" className="form-control" autoComplete="off" />
-          <input id="selectFileButton" type="file" className="d-none" />
-          <div className="input-group-append" role="group">
+      <Form className="fixed-bottom">
+        <InputGroup>
+          <FormControl></FormControl>
+          <InputGroup.Append>
             <button id="uploadButton" className="btn btn-secondary" type="button">Upload</button>
             <input className="btn btn-primary" type="submit" value="Send" />
-          </div>
-        </div>
-      </form>
+          </InputGroup.Append>
+        </InputGroup>
+      </Form>
     </Fragment>
   );
 };

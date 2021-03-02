@@ -1,18 +1,21 @@
 import React, { Fragment } from 'react';
+import Toast from 'react-bootstrap/Toast';
 
 const FileUploadToast = () => {
   return (
     <Fragment>
-      <div id="toastWrapper">
-        <div id="liveToast" className="toast hide" role="alert" data-delay="2000">
-          <div className="alert alert-success mb-0" role="alert">
+      <Toast
+        style={{
+          width: '200px'
+        }}
+        show={false}
+        >
+        <Toast.Header>
+          <strong className="mr-auto">
             File Uploaded!
-            <button type="button" className="ml-2 mb-1 close" data-dismiss="toast">
-              <span>&times;</span>
-            </button>
-          </div>
-        </div>
-      </div>
+          </strong>
+        </Toast.Header>
+      </Toast>
     </Fragment>
   );
 };

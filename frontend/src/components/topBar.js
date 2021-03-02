@@ -1,17 +1,20 @@
 import React, { Fragment } from 'react';
+import Navbar from 'react-bootstrap/Navbar';
+import Nav from 'react-bootstrap/Nav';
+import Button from 'react-bootstrap/Button';
 
 const TopBar = () => {
   return (
     <Fragment>
-      <nav className="navbar fixed-top navbar-expand-lg navbar-light bg-light">
-        <a className="navbar-brand" href="/#">Local Chat</a>
-        <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse">
-          <span className="navbar-toggler-icon"></span>
-        </button>
-        <div className="collapse navbar-collapse" id="navbarCollapse">
-          <button id="userListButton" className="btn btn-link">User List</button>
-        </div>
-      </nav>
+      <Navbar bg="light" expand="lg">
+        <Navbar.Brand href="#home">Local Chat</Navbar.Brand>
+        <Navbar.Toggle aria-controls="basic-navbar-nav" />
+        <Navbar.Collapse id="basic-navbar-nav">
+          <Nav className="mr-auto">
+          </Nav>
+          <Button variant="link">User List</Button>
+        </Navbar.Collapse>
+      </Navbar>
     </Fragment>
   );
 };
