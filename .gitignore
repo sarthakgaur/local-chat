@@ -7,7 +7,8 @@ node_modules/
 /coverage
 
 # Production
-/build
+backend/build
+frontend/build
 
 # Uploads
 backend/public/uploads/

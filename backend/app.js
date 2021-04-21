@@ -39,6 +39,9 @@ app.use(cookieParser());
 // Public Folder
 app.use("/public", express.static("public"));
 
+// Build folder
+app.use(express.static(path.join(__dirname, 'build')));
+
 // Bootstrap Files
 app.use("/js", express.static("./node_modules/bootstrap/dist/js"));
 app.use("/js", express.static("./node_modules/jquery/dist"));
@@ -64,7 +67,7 @@ const upload = multer({
 }).single("chatFile");
 
 app.get("/", (req, res) => {
-  res.status(500).send({ message: "Local Chat" });
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
 app.post("/upload", (req, res) => {
@@ -164,7 +167,8 @@ async function sendOldEvents(socket) {
         event_user AS username,
         event_type AS type, 
         event_info AS info
-      FROM events;
+      FROM events
+      ORDER BY event_id;
     `;
     let oldEvents = await db.query(query);
     socket.emit("oldEvents", oldEvents.rows);

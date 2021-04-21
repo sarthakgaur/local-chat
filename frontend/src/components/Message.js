@@ -36,6 +36,7 @@ function createMessageBody(text) {
 
 function createFileUploadMessage(event) {
   let child;
+  const pre = process.env.REACT_APP_SERVER_URL ? process.env.REACT_APP_SERVER_URL : '';
 
   if (event.info.type.split('/')[0] === "image") {
     child = React.createElement('img', {
@@ -47,7 +48,7 @@ function createFileUploadMessage(event) {
   }
 
   return React.createElement('a', {
-    href: process.env.REACT_APP_SERVER_URL + event.info.link,
+    href: pre + event.info.link,
     target: '_blank'
   }, child);
 };
