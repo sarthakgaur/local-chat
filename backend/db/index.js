@@ -13,7 +13,9 @@ async function query(text, params) {
   let start = Date.now();
   let results = await pool.query(text, params);
   let duration = Date.now() - start;
-  console.log("Executed query:", { text, params, duration, rows: results.rowCount });
+  console.log("Executed query:", {
+    text, params, duration, rows: results.rowCount, result: results.rows[0]
+  });
   return results;
 }
 

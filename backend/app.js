@@ -64,7 +64,7 @@ const upload = multer({
 }).single("chatFile");
 
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public/html/index.html"));
+  res.status(500).send({ message: "Local Chat" });
 });
 
 app.post("/upload", (req, res) => {
@@ -111,8 +111,8 @@ async function handleUserConnected(socket, username) {
     socket.emit("userVerified", event);
 
     await sendOldEvents(socket);
-    await insertEvent(event);
-    io.to("chatRoom").emit("userConnected", event);
+    let { event_uuid } = await insertEvent(event);
+    io.to("chatRoom").emit("userConnected", { ...event, uuid: event_uuid });
   } else {
     socket.emit("invalidUsername", { username });
   }
@@ -123,13 +123,13 @@ async function handleDisconnect(socket) {
   connections.delete(socket.id);
 
   let time = Date.now();
-  let type = "disconnect";
+  let type = "userDisconnected";
   let userList = Array.from(getUsersSet());
   let info = { userList };
   let event = { time, username, type, info };
 
-  await insertEvent(event)
-  io.to("chatRoom").emit("userDisconnected", event);
+  let { event_uuid } = await insertEvent(event);
+  io.to("chatRoom").emit("userDisconnected", { ...event, uuid: event_uuid });
 }
 
 async function handleChatMessage(socket, body) {
@@ -139,8 +139,8 @@ async function handleChatMessage(socket, body) {
   let info = { body };
   let event = { time, username, type, info };
 
-  await insertEvent(event)
-  io.to("chatRoom").emit("chatMessage", event);
+  let { event_uuid } = await insertEvent(event);
+  io.to("chatRoom").emit("chatMessage", { ...event, uuid: event_uuid });
 }
 
 async function handleFileUpload(req, res) {
@@ -151,15 +151,16 @@ async function handleFileUpload(req, res) {
   let info = { link, type: req.file.mimetype };
   let event = { time, username, type, info };
 
-  await insertEvent(event);
+  let { event_uuid } = await insertEvent(event);
   res.status(200).send({ message: "File uploaded successfully." });
-  io.to("chatRoom").emit("fileUpload", event);
+  io.to("chatRoom").emit("fileUpload", { ...event, uuid: event_uuid });
 }
 
 async function sendOldEvents(socket) {
   try {
     let query = `
-      SELECT event_time AS time,
+      SELECT event_uuid AS uuid,
+        event_time AS time,
         event_user AS username,
         event_type AS type, 
         event_info AS info
@@ -179,7 +180,7 @@ async function insertEvent({ time, username, type, info }) {
       VALUES (to_timestamp($1 / 1000.0), $2, $3, $4)
       RETURNING *;
     `;
-    await db.query(query, [time, username, type, info]);
+    return (await db.query(query, [time, username, type, info])).rows[0];
   } catch (error) {
     console.error(error.message);
   }
