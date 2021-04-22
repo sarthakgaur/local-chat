@@ -1,4 +1,5 @@
 import React from 'react';
+import Card from 'react-bootstrap/Card';
 
 function createMessageBody(text) {
   let urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
@@ -35,8 +36,8 @@ function createMessageBody(text) {
 }
 
 function createFileUploadMessage(event) {
-  let child;
   const pre = process.env.REACT_APP_SERVER_URL ? process.env.REACT_APP_SERVER_URL : '';
+  let child;
 
   if (event.info.type.split('/')[0] === "image") {
     child = React.createElement('img', {
@@ -54,9 +55,7 @@ function createFileUploadMessage(event) {
 };
 
 const Message = ({ event }) => {
-  let time;
-  let title;
-  let message;
+  let time, title, message;
 
   switch (event.type) {
     case 'chatMessage':
@@ -87,11 +86,11 @@ const Message = ({ event }) => {
 
   return (
     <>
-      <div className="card bg-light border-top-0">
-        <div className="card-body">
+      <Card className="card bg-light border-top-0">
+        <Card.Body>
           {
             title &&
-            <h5 className="card-title d-inline">{event.username}</h5>
+            <Card.Title className="d-inline">{event.username}</Card.Title>
           }
           {
             time &&
@@ -100,8 +99,8 @@ const Message = ({ event }) => {
           <div className="py-2">
             {message}
           </div>
-        </div>
-      </div>
+        </Card.Body>
+      </Card>
     </>
   );
 };

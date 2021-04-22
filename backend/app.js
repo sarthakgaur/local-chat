@@ -43,8 +43,6 @@ app.use("/public", express.static("public"));
 app.use(express.static(path.join(__dirname, 'build')));
 
 // Bootstrap Files
-app.use("/js", express.static("./node_modules/bootstrap/dist/js"));
-app.use("/js", express.static("./node_modules/jquery/dist"));
 app.use("/css", express.static("./node_modules/bootstrap/dist/css"));
 
 let connections = new Map();

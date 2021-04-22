@@ -6,10 +6,9 @@ const FileUploadToast = ({ handleFileUploadToast }) => {
     <>
       <Toast
         show={true}
-        className='toast'
         onClose={() => handleFileUploadToast()}
       >
-        <Toast.Header className="alert-success p-2">
+        <Toast.Header className="bg-success text-light p-2">
           File Uploaded!
         </Toast.Header>
       </Toast>

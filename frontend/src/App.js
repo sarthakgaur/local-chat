@@ -11,11 +11,10 @@ import ChatInput from './components/ChatInput';
 const App = () => {
   const socket = useContext(SocketContext);
 
-  const [username, setUsername] = useState(localStorage.getItem('username'));
   const [showUserListModal, setShowUserListModal] = useState(false);
   const [members, setMembers] = useState([]);
   const [events, setEvents] = useState([]);
-  const [validated, setValidated] = useState(false);
+  const [verificationStage, setVerificationStage] = useState();
   const [showFileUploadToast, setShowFileUploadToast] = useState(false);
   const [fileUploadLabel, setfileUploadLabel] = useState('upload');
 
@@ -31,7 +30,7 @@ const App = () => {
     if (username) {
       socket.emit('userConnected', username);
     } else {
-      setValidated(true);
+      setVerificationStage('failed');
     }
   };
 
@@ -79,6 +78,7 @@ const App = () => {
     }
 
     socket.on('connect', () => {
+      const username = localStorage.getItem('username');
       if (username) {
         socket.emit("userConnected", username);
       }
@@ -93,14 +93,13 @@ const App = () => {
     socket.on('fileUpload', handleFileUpload);
 
     socket.on('invalidUsername', () => {
-      setUsername('');
-      setValidated(true);
+      setVerificationStage('failed');
     });
 
     socket.on('userVerified', (event) => {
       document.cookie = `socket_id=${socket.id};SameSite=Strict`;
       localStorage.setItem('username', event.username);
-      setUsername(event.username);
+      setVerificationStage('success');
     });
 
     socket.on('oldEvents', (events) => {
@@ -130,20 +129,23 @@ const App = () => {
       <TopBar handleUserListModal={handleUserListModal} />
       {
         showUserListModal &&
-        < UserListModal
+        <UserListModal
           members={members}
           handleUserListModal={handleUserListModal}
         />
       }
       <Messages events={events} />
       {
-        !username &&
+        verificationStage !== 'success' &&
         <UsernameInputModal
-          validated={validated}
+          verificationStage={verificationStage}
           handleUserNameSubmit={handleUserNameSubmit}
         />
       }
-      {showFileUploadToast && <FileUploadToast handleFileUploadToast={handleFileUploadToast} />}
+      {
+        showFileUploadToast &&
+        <FileUploadToast handleFileUploadToast={handleFileUploadToast} />
+      }
       <ChatInput
         onChatInputSubmit={onChatInputSubmit}
         fileUploadLabel={fileUploadLabel}
