@@ -1,16 +1,18 @@
 # local-chat
 
-A minimal chat application built using Node and Express. The front-end is written in React.
+A minimal chat application built using React, Express, and PostgreSQL.
 
 ## Installation
 
 1. `git clone https://github.com/sarthakgaur/local-chat`
-2. `cd local-chat/backend`
+2. `cd local-chat/frontend`
 3. `npm install`
-4. `node app.js`
-5. `cd local-chat/frontend`
-6. `npm install`
-7. `npm start`
+4. `npm run build`
+5. `mv build ../backend`
+6. `cd local-chat/backend`
+7. `npm install`
+8. `node app.js`
+9. Open `localhost:3000` in your browser
 
 ## Features
 
