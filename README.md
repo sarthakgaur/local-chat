@@ -12,7 +12,7 @@ A minimal chat application built using React, Express, and PostgreSQL.
 6. `cd local-chat/backend`
 7. `npm install`
 8. `node app.js`
-9. Open `localhost:3000` in your browser
+9. Open `localhost:3001` in your browser
 
 ## Features
 
