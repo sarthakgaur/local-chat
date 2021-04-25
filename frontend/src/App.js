@@ -5,7 +5,6 @@ import TopBar from "./components/TopBar";
 import Messages from "./components/Messages";
 import UsernameInputModal from "./components/UsernameInputModal";
 import UserListModal from "./components/UserListModal";
-import FileUploadToast from "./components/FileUploadToast";
 import ChatInput from "./components/ChatInput";
 
 const App = () => {
@@ -15,12 +14,6 @@ const App = () => {
   const [members, setMembers] = useState([]);
   const [events, setEvents] = useState([]);
   const [verificationStage, setVerificationStage] = useState();
-  const [showFileUploadToast, setShowFileUploadToast] = useState(false);
-  const [fileUploadLabel, setfileUploadLabel] = useState("upload");
-
-  const handleFileUpload = (type) => {
-    setfileUploadLabel(type);
-  };
 
   const handleUserListModal = () => {
     setShowUserListModal(!showUserListModal);
@@ -32,35 +25,6 @@ const App = () => {
     } else {
       setVerificationStage("failed");
     }
-  };
-
-  const onChatInputSubmit = async (input) => {
-    if (input.value) {
-      socket.emit("chatMessage", input.value);
-    }
-
-    if (input.file) {
-      const formData = new FormData();
-      formData.append("chatFile", input.file);
-      setfileUploadLabel("spinner");
-
-      const response = await fetch("/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (response.status === 200) {
-        setShowFileUploadToast(true);
-        setTimeout(() => {
-          setShowFileUploadToast(false);
-        }, 2000);
-      }
-      setfileUploadLabel("upload");
-    }
-  };
-
-  const handleFileUploadToast = () => {
-    setShowFileUploadToast(!showFileUploadToast);
   };
 
   useEffect(() => {
@@ -145,14 +109,7 @@ const App = () => {
           handleUserNameSubmit={handleUserNameSubmit}
         />
       )}
-      {showFileUploadToast && (
-        <FileUploadToast handleFileUploadToast={handleFileUploadToast} />
-      )}
-      <ChatInput
-        onChatInputSubmit={onChatInputSubmit}
-        fileUploadLabel={fileUploadLabel}
-        handleFileUpload={handleFileUpload}
-      />
+      <ChatInput />
     </>
   );
 };

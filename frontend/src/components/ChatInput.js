@@ -1,4 +1,7 @@
-import React, { useRef } from "react";
+import React, { useContext, useRef, useState } from "react";
+
+import SocketContext from "../context/socket";
+import FileUploadToast from "./FileUploadToast";
 
 import Form from "react-bootstrap/Form";
 import InputGroup from "react-bootstrap/InputGroup";
@@ -6,73 +9,95 @@ import FormControl from "react-bootstrap/FormControl";
 import Button from "react-bootstrap/Button";
 import Spinner from "react-bootstrap/Spinner";
 
-const ChatInput = ({
-  onChatInputSubmit,
-  fileUploadLabel,
-  handleFileUpload,
-}) => {
+const ChatInput = () => {
+  const socket = useContext(SocketContext);
+
+  const [fileUploadLabel, setfileUploadLabel] = useState("Upload");
+  const [showFileUploadToast, setShowFileUploadToast] = useState(false);
+
   const chatInput = useRef();
   const chatFileInput = useRef();
 
-  const setUploadLabel = () => {
-    if (fileUploadLabel === "selected") {
-      return "1 File Selected";
-    } else if (fileUploadLabel === "spinner") {
-      return (
+  const handleFileUploadToast = () => {
+    setShowFileUploadToast(!showFileUploadToast);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const value = chatInput.current.value;
+    const file = chatFileInput.current.files[0];
+
+    if (value) {
+      socket.emit("chatMessage", value);
+    }
+
+    if (file) {
+      const formData = new FormData();
+      formData.append("chatFile", file);
+      setfileUploadLabel(
         <>
           <Spinner animation="border" variant="light" size="sm" />
           <span> Uploading...</span>
         </>
       );
-    }
-    return "Upload";
-  };
 
-  const changeUploadLabel = () => {
-    if (chatFileInput.current.files.length > 0) {
-      handleFileUpload("selected");
-    } else {
-      handleFileUpload("upload");
-    }
-  };
+      const response = await fetch("/upload", {
+        method: "POST",
+        body: formData,
+      });
 
-  const onSubmit = (e) => {
-    e.preventDefault();
-    onChatInputSubmit({
-      value: chatInput.current.value,
-      file: chatFileInput.current.files[0],
-    });
+      if (response.status === 200) {
+        setShowFileUploadToast(true);
+        setTimeout(() => {
+          setShowFileUploadToast(false);
+        }, 2000);
+      }
+      setfileUploadLabel("Upload");
+    }
+
     chatInput.current.value = "";
     chatFileInput.current.value = "";
   };
 
+  const handleFileInput = () => {
+    if (chatFileInput.current.files.length > 0) {
+      setfileUploadLabel("1 File Selected");
+    } else {
+      setfileUploadLabel("Upload");
+    }
+  };
+
   return (
-    <Form className="fixed-bottom" onSubmit={onSubmit}>
-      <InputGroup>
-        <FormControl ref={chatInput}></FormControl>
-        <InputGroup.Append>
-          <Button
-            className="btn-secondary"
-            onClick={() => {
-              chatFileInput.current.click();
-            }}
-          >
-            {setUploadLabel()}
-          </Button>
-          <input
-            type="file"
-            className="d-none"
-            onInput={() => {
-              changeUploadLabel();
-            }}
-            ref={chatFileInput}
-          />
-          <Button className="btn-primary" type="submit">
-            Send
-          </Button>
-        </InputGroup.Append>
-      </InputGroup>
-    </Form>
+    <>
+      {showFileUploadToast && (
+        <FileUploadToast handleFileUploadToast={handleFileUploadToast} />
+      )}
+      <Form className="fixed-bottom" onSubmit={handleSubmit}>
+        <InputGroup>
+          <FormControl ref={chatInput}></FormControl>
+          <InputGroup.Append>
+            <Button
+              className="btn-secondary"
+              onClick={() => {
+                chatFileInput.current.click();
+              }}
+            >
+              {fileUploadLabel}
+            </Button>
+            <input
+              type="file"
+              className="d-none"
+              onInput={handleFileInput}
+              ref={chatFileInput}
+            />
+            <Button className="btn-primary" type="submit">
+              Send
+            </Button>
+          </InputGroup.Append>
+        </InputGroup>
+      </Form>
+    </>
   );
 };
 
