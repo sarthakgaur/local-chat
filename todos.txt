@@ -1,0 +1,21 @@
+01. Add support for nicknames. Done.
+02. Broadcast message when a user connects or disconnects. Done.
+03. Add option to get a list of connected users. Done
+04. Fix the layout in mobile devices. Done.
+05. Save username in the localStorage. Done.
+06. Allow uploading of files. Done.
+07. View images in chat. Done.
+08. Fix upload button. Done.
+09. add Multer. Done.
+10. Setup Views. Done.
+11. Add a link if chat message contains a url. Done.
+12. Add a database to save last 100 messages. Done.
+13. Uploaded files and images should be rendered along with messages. Done.
+14. Username must be unique. Done.
+15. Add modal to client. Done.
+16. Add modal to list users. Done.
+17. Add bootstrap. Done.
+18. Add logging support. Done.
+19. Port frontend to React. Done.
+20. Format the code using prettier. Done.
+21. Add user is typing notification.

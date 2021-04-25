@@ -11,25 +11,6 @@ const app = express();
 const http = require("http").createServer(app);
 const io = require("socket.io")(http);
 
-// TODO Add support for nicknames. Done.
-// TODO Broadcast message when a user connects or disconnects. Done.
-// TODO Add option to get a list of connected users. Done
-// TODO Fix the layout in mobile devices. Done.
-// TODO Save username in the localStorage. Done.
-// TODO Allow uploading of files. Done.
-// TODO View images in chat. Done.
-// TODO Fix upload button. Done.
-// TODO add Multer. Done.
-// TODO Setup Views. Done.
-// TODO Add a link if chat message contains a url. Done.
-// TODO Add a database to save last 100 messages. Done.
-// TODO Uploaded files and images should be rendered along with messages. Done.
-// TODO Username must be unique. Done.
-// TODO Add modal to client. Done.
-// TODO Add modal to list users. Done.
-// TODO Add bootstrap. Done.
-// TODO Add logging support. Done.
-
 // Logger Setup
 app.use(morgan("common"));
 
