@@ -12,7 +12,6 @@ const App = () => {
 
   const [showUserListModal, setShowUserListModal] = useState(false);
   const [members, setMembers] = useState([]);
-  const [events, setEvents] = useState([]);
   const [verificationStage, setVerificationStage] = useState();
 
   const handleUserListModal = () => {
@@ -30,20 +29,10 @@ const App = () => {
   useEffect(() => {
     const handleUserConnected = (event) => {
       setMembers(event.info.userList);
-      setEvents((events) => events.concat(event));
     };
 
     const handleUserDisconnected = (event) => {
       setMembers(event.info.userList);
-      setEvents((events) => events.concat(event));
-    };
-
-    const handleChatMessage = (event) => {
-      setEvents((events) => events.concat(event));
-    };
-
-    const handleFileUpload = (event) => {
-      setEvents((events) => events.concat(event));
     };
 
     socket.on("connect", () => {
@@ -54,12 +43,7 @@ const App = () => {
     });
 
     socket.on("userConnected", handleUserConnected);
-
     socket.on("userDisconnected", handleUserDisconnected);
-
-    socket.on("chatMessage", handleChatMessage);
-
-    socket.on("fileUpload", handleFileUpload);
 
     socket.on("invalidUsername", () => {
       setVerificationStage("failed");
@@ -80,12 +64,6 @@ const App = () => {
           case "userDisconnected":
             handleUserDisconnected(event);
             break;
-          case "chatMessage":
-            handleChatMessage(event);
-            break;
-          case "fileUpload":
-            handleFileUpload(event);
-            break;
           default:
             break;
         }
@@ -102,7 +80,7 @@ const App = () => {
           handleUserListModal={handleUserListModal}
         />
       )}
-      <Messages events={events} />
+      <Messages />
       {verificationStage !== "success" && (
         <UsernameInputModal
           verificationStage={verificationStage}
