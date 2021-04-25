@@ -31,7 +31,7 @@ const UsernameInputModal = () => {
       localStorage.setItem("username", event.username);
       setVerificationStage("success");
     });
-  }, []);
+  }, [socket]);
 
   const showFeedback = () => {
     if (verificationStage === "failed") {

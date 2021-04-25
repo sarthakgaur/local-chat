@@ -36,7 +36,7 @@ const TopBar = () => {
         }
       });
     });
-  }, []);
+  }, [socket]);
 
   return (
     <>

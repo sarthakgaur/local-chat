@@ -16,7 +16,7 @@ const App = () => {
         socket.emit("userConnected", username);
       }
     });
-  }, []);
+  }, [socket]);
 
   return (
     <>

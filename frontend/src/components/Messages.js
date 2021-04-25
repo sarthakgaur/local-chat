@@ -37,7 +37,7 @@ const Messages = () => {
         }
       });
     });
-  }, []);
+  }, [socket]);
 
   useLayoutEffect(() => {
     endElement.current.scrollIntoView({ behavior: "smooth" });
