@@ -1,14 +1,14 @@
-import React from 'react';
-import Card from 'react-bootstrap/Card';
+import React from "react";
+import Card from "react-bootstrap/Card";
 
 function createMessageBody(text) {
-  let urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+  let urlRegex = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/gi;
   let textBuffer = "";
   let children = [];
   let matches = [];
   let match;
 
-  while (match = urlRegex.exec(text)) {
+  while ((match = urlRegex.exec(text))) {
     matches.push({ text: match[0], index: match.index });
   }
 
@@ -19,7 +19,11 @@ function createMessageBody(text) {
         textBuffer = "";
       }
       let textContent = matches[matchIndex].text;
-      let element = React.createElement('a', { href: textContent }, textContent);
+      let element = React.createElement(
+        "a",
+        { href: textContent },
+        textContent
+      );
       children.push(element);
       matchIndex++;
       i += textContent.length - 1;
@@ -32,34 +36,40 @@ function createMessageBody(text) {
     children.push(textBuffer);
   }
 
-  return React.createElement('span', {}, children);
+  return React.createElement("span", {}, children);
 }
 
 function createFileUploadMessage(event) {
-  const pre = process.env.REACT_APP_SERVER_URL ? process.env.REACT_APP_SERVER_URL : '';
+  const pre = process.env.REACT_APP_SERVER_URL
+    ? process.env.REACT_APP_SERVER_URL
+    : "";
   let child;
 
-  if (event.info.type.split('/')[0] === "image") {
-    child = React.createElement('img', {
+  if (event.info.type.split("/")[0] === "image") {
+    child = React.createElement("img", {
       className: "img-fluid width-250",
-      src: event.info.link
+      src: event.info.link,
     });
   } else {
-    child = 'Uploaded a file.';
+    child = "Uploaded a file.";
   }
 
-  return React.createElement('a', {
-    href: pre + event.info.link,
-    target: '_blank'
-  }, child);
-};
+  return React.createElement(
+    "a",
+    {
+      href: pre + event.info.link,
+      target: "_blank",
+    },
+    child
+  );
+}
 
 const Message = ({ event }) => {
   let time, title, message;
 
   switch (event.type) {
-    case 'chatMessage':
-    case 'fileUpload':
+    case "chatMessage":
+    case "fileUpload":
       title = true;
       time = true;
       break;
@@ -68,16 +78,16 @@ const Message = ({ event }) => {
   }
 
   switch (event.type) {
-    case 'userConnected':
+    case "userConnected":
       message = `${event.username} has joined the chat.`;
       break;
-    case 'userDisconnected':
-      message = `${event.username} has left the chat.`
+    case "userDisconnected":
+      message = `${event.username} has left the chat.`;
       break;
-    case 'chatMessage':
+    case "chatMessage":
       message = createMessageBody(event.info.body);
       break;
-    case 'fileUpload':
+    case "fileUpload":
       message = createFileUploadMessage(event);
       break;
     default:
@@ -85,23 +95,19 @@ const Message = ({ event }) => {
   }
 
   return (
-    <>
-      <Card className="card bg-light border-top-0">
-        <Card.Body>
-          {
-            title &&
-            <Card.Title className="d-inline">{event.username}</Card.Title>
-          }
-          {
-            time &&
-            <small className="text-muted ml-2">{new Date(event.time).toLocaleTimeString()}</small>
-          }
-          <div className="py-2">
-            {message}
-          </div>
-        </Card.Body>
-      </Card>
-    </>
+    <Card className="card bg-light border-top-0">
+      <Card.Body>
+        {title && (
+          <Card.Title className="d-inline">{event.username}</Card.Title>
+        )}
+        {time && (
+          <small className="text-muted ml-2">
+            {new Date(event.time).toLocaleTimeString()}
+          </small>
+        )}
+        <div className="py-2">{message}</div>
+      </Card.Body>
+    </Card>
   );
 };
 

@@ -1,9 +1,9 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import App from './App';
-import './index.css';
+import React from "react";
+import ReactDOM from "react-dom";
+import App from "./App";
+import "./index.css";
 
-import SocketContext, { socket } from './context/socket';
+import SocketContext, { socket } from "./context/socket";
 
 ReactDOM.render(
   <React.StrictMode>
@@ -11,5 +11,5 @@ ReactDOM.render(
       <App />
     </SocketContext.Provider>
   </React.StrictMode>,
-  document.getElementById('root')
+  document.getElementById("root")
 );

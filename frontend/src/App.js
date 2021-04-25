@@ -1,12 +1,12 @@
-import React, { useEffect, useContext, useState } from 'react';
-import SocketContext from './context/socket';
+import React, { useEffect, useContext, useState } from "react";
+import SocketContext from "./context/socket";
 
-import TopBar from './components/TopBar';
-import Messages from './components/Messages';
-import UsernameInputModal from './components/UsernameInputModal';
-import UserListModal from './components/UserListModal';
-import FileUploadToast from './components/FileUploadToast';
-import ChatInput from './components/ChatInput';
+import TopBar from "./components/TopBar";
+import Messages from "./components/Messages";
+import UsernameInputModal from "./components/UsernameInputModal";
+import UserListModal from "./components/UserListModal";
+import FileUploadToast from "./components/FileUploadToast";
+import ChatInput from "./components/ChatInput";
 
 const App = () => {
   const socket = useContext(SocketContext);
@@ -16,7 +16,7 @@ const App = () => {
   const [events, setEvents] = useState([]);
   const [verificationStage, setVerificationStage] = useState();
   const [showFileUploadToast, setShowFileUploadToast] = useState(false);
-  const [fileUploadLabel, setfileUploadLabel] = useState('upload');
+  const [fileUploadLabel, setfileUploadLabel] = useState("upload");
 
   const handleFileUpload = (type) => {
     setfileUploadLabel(type);
@@ -28,29 +28,34 @@ const App = () => {
 
   const handleUserNameSubmit = (username) => {
     if (username) {
-      socket.emit('userConnected', username);
+      socket.emit("userConnected", username);
     } else {
-      setVerificationStage('failed');
+      setVerificationStage("failed");
     }
   };
 
   const onChatInputSubmit = async (input) => {
     if (input.value) {
-      socket.emit('chatMessage', input.value);
+      socket.emit("chatMessage", input.value);
     }
 
     if (input.file) {
       const formData = new FormData();
       formData.append("chatFile", input.file);
-      setfileUploadLabel('spinner');
+      setfileUploadLabel("spinner");
 
-      const response = await fetch("/upload", { method: "POST", body: formData });
+      const response = await fetch("/upload", {
+        method: "POST",
+        body: formData,
+      });
 
       if (response.status === 200) {
         setShowFileUploadToast(true);
-        setTimeout(() => { setShowFileUploadToast(false) }, 2000);
+        setTimeout(() => {
+          setShowFileUploadToast(false);
+        }, 2000);
       }
-      setfileUploadLabel('upload');
+      setfileUploadLabel("upload");
     }
   };
 
@@ -75,34 +80,34 @@ const App = () => {
 
     const handleFileUpload = (event) => {
       setEvents((events) => events.concat(event));
-    }
+    };
 
-    socket.on('connect', () => {
-      const username = localStorage.getItem('username');
+    socket.on("connect", () => {
+      const username = localStorage.getItem("username");
       if (username) {
         socket.emit("userConnected", username);
       }
     });
 
-    socket.on('userConnected', handleUserConnected);
+    socket.on("userConnected", handleUserConnected);
 
-    socket.on('userDisconnected', handleUserDisconnected);
+    socket.on("userDisconnected", handleUserDisconnected);
 
-    socket.on('chatMessage', handleChatMessage);
+    socket.on("chatMessage", handleChatMessage);
 
-    socket.on('fileUpload', handleFileUpload);
+    socket.on("fileUpload", handleFileUpload);
 
-    socket.on('invalidUsername', () => {
-      setVerificationStage('failed');
+    socket.on("invalidUsername", () => {
+      setVerificationStage("failed");
     });
 
-    socket.on('userVerified', (event) => {
+    socket.on("userVerified", (event) => {
       document.cookie = `socket_id=${socket.id};SameSite=Strict`;
-      localStorage.setItem('username', event.username);
-      setVerificationStage('success');
+      localStorage.setItem("username", event.username);
+      setVerificationStage("success");
     });
 
-    socket.on('oldEvents', (events) => {
+    socket.on("oldEvents", (events) => {
       events.forEach((event) => {
         switch (event.type) {
           case "userConnected":
@@ -127,25 +132,22 @@ const App = () => {
   return (
     <>
       <TopBar handleUserListModal={handleUserListModal} />
-      {
-        showUserListModal &&
+      {showUserListModal && (
         <UserListModal
           members={members}
           handleUserListModal={handleUserListModal}
         />
-      }
+      )}
       <Messages events={events} />
-      {
-        verificationStage !== 'success' &&
+      {verificationStage !== "success" && (
         <UsernameInputModal
           verificationStage={verificationStage}
           handleUserNameSubmit={handleUserNameSubmit}
         />
-      }
-      {
-        showFileUploadToast &&
+      )}
+      {showFileUploadToast && (
         <FileUploadToast handleFileUploadToast={handleFileUploadToast} />
-      }
+      )}
       <ChatInput
         onChatInputSubmit={onChatInputSubmit}
         fileUploadLabel={fileUploadLabel}

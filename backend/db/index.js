@@ -6,7 +6,7 @@ let pool = new Pool({
   password: process.env.DB_PASSWORD,
   host: process.env.DB_HOST,
   port: process.env.DB_PORT,
-  database: process.env.DB_DATABASE
+  database: process.env.DB_DATABASE,
 });
 
 async function query(text, params) {
@@ -14,7 +14,11 @@ async function query(text, params) {
   let results = await pool.query(text, params);
   let duration = Date.now() - start;
   console.log("Executed query:", {
-    text, params, duration, rows: results.rowCount, result: results.rows[0]
+    text,
+    params,
+    duration,
+    rows: results.rowCount,
+    result: results.rows[0],
   });
   return results;
 }

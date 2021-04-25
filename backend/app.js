@@ -40,7 +40,7 @@ app.use(cookieParser());
 app.use("/public", express.static("public"));
 
 // Build folder
-app.use(express.static(path.join(__dirname, 'build')));
+app.use(express.static(path.join(__dirname, "build")));
 
 // Bootstrap Files
 app.use("/css", express.static("./node_modules/bootstrap/dist/css"));
@@ -56,16 +56,16 @@ const storage = multer.diskStorage({
     let time = Date.now();
     let name = `${basename}-${time}${extension}`;
     cb(null, name);
-  }
+  },
 });
 
 // Init Upload
 const upload = multer({
-  storage: storage
+  storage: storage,
 }).single("chatFile");
 
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+  res.sendFile(path.join(__dirname, "build", "index.html"));
 });
 
 app.post("/upload", (req, res) => {
@@ -107,8 +107,12 @@ async function handleUserConnected(socket, username) {
     let event = { time, username, type, info };
 
     socket.join("chatRoom");
-    socket.on("disconnect", () => { handleDisconnect(socket); });
-    socket.on("chatMessage", (body) => { handleChatMessage(socket, body); });
+    socket.on("disconnect", () => {
+      handleDisconnect(socket);
+    });
+    socket.on("chatMessage", (body) => {
+      handleChatMessage(socket, body);
+    });
     socket.emit("userVerified", event);
 
     await sendOldEvents(socket);
