@@ -26,16 +26,24 @@ app.use(express.static(path.join(__dirname, "build")));
 // Bootstrap Files
 app.use("/css", express.static("./node_modules/bootstrap/dist/css"));
 
-let connections = new Map();
+http.listen(3001, () => {
+  console.log("listening on *:3001");
+});
+
+const connections = new Map();
+
+function getUsersSet() {
+  return new Set(connections.values());
+}
 
 // Set Storage Engine
 const storage = multer.diskStorage({
   destination: "./public/uploads",
-  filename: (req, file, cb) => {
-    let extension = path.extname(file.originalname);
-    let basename = path.basename(file.originalname, extension);
-    let time = Date.now();
-    let name = `${basename}-${time}${extension}`;
+  filename: (_, file, cb) => {
+    const extension = path.extname(file.originalname);
+    const basename = path.basename(file.originalname, extension);
+    const time = Date.now();
+    const name = `${basename}-${time}${extension}`;
     cb(null, name);
   },
 });
@@ -45,7 +53,7 @@ const upload = multer({
   storage: storage,
 }).single("chatFile");
 
-app.get("/", (req, res) => {
+app.get("/", (_, res) => {
   res.sendFile(path.join(__dirname, "build", "index.html"));
 });
 
@@ -81,11 +89,11 @@ async function handleUserConnected(socket, username) {
   if (isValidUsername(username)) {
     connections.set(socket.id, username);
 
-    let time = Date.now();
-    let type = "userConnected";
-    let userList = Array.from(getUsersSet());
-    let info = { userList };
-    let event = { time, username, type, info };
+    const time = Date.now();
+    const type = "userConnected";
+    const userList = Array.from(getUsersSet());
+    const info = { userList };
+    const event = { time, username, type, info };
 
     socket.join("chatRoom");
     socket.on("disconnect", () => {
@@ -97,54 +105,54 @@ async function handleUserConnected(socket, username) {
     socket.emit("userVerified", event);
 
     await sendOldEvents(socket);
-    let { event_uuid } = await insertEvent(event);
-    io.to("chatRoom").emit("userConnected", { ...event, uuid: event_uuid });
+    event.uuid = (await insertEvent(event)).event_uuid;
+    io.to("chatRoom").emit("userConnected", event);
   } else {
     socket.emit("invalidUsername", { username });
   }
 }
 
 async function handleDisconnect(socket) {
-  let username = connections.get(socket.id);
+  const username = connections.get(socket.id);
   connections.delete(socket.id);
 
-  let time = Date.now();
-  let type = "userDisconnected";
-  let userList = Array.from(getUsersSet());
-  let info = { userList };
-  let event = { time, username, type, info };
+  const time = Date.now();
+  const type = "userDisconnected";
+  const userList = Array.from(getUsersSet());
+  const info = { userList };
+  const event = { time, username, type, info };
 
-  let { event_uuid } = await insertEvent(event);
-  io.to("chatRoom").emit("userDisconnected", { ...event, uuid: event_uuid });
+  event.uuid = (await insertEvent(event)).event_uuid;
+  io.to("chatRoom").emit("userDisconnected", event);
 }
 
 async function handleChatMessage(socket, body) {
-  let time = Date.now();
-  let username = connections.get(socket.id);
-  let type = "chatMessage";
-  let info = { body };
-  let event = { time, username, type, info };
+  const time = Date.now();
+  const username = connections.get(socket.id);
+  const type = "chatMessage";
+  const info = { body };
+  const event = { time, username, type, info };
 
-  let { event_uuid } = await insertEvent(event);
-  io.to("chatRoom").emit("chatMessage", { ...event, uuid: event_uuid });
+  event.uuid = (await insertEvent(event)).event_uuid;
+  io.to("chatRoom").emit("chatMessage", event);
 }
 
 async function handleFileUpload(req, res) {
-  let time = Date.now();
-  let username = connections.get(req.cookies["socket_id"]);
-  let type = "fileUpload";
-  let link = `/public/uploads/${req.file.filename}`;
-  let info = { link, type: req.file.mimetype };
-  let event = { time, username, type, info };
+  const time = Date.now();
+  const username = connections.get(req.cookies["socket_id"]);
+  const type = "fileUpload";
+  const link = `/public/uploads/${req.file.filename}`;
+  const info = { link, type: req.file.mimetype };
+  const event = { time, username, type, info };
 
-  let { event_uuid } = await insertEvent(event);
+  event.uuid = (await insertEvent(event)).event_uuid;
   res.status(200).send({ message: "File uploaded successfully." });
-  io.to("chatRoom").emit("fileUpload", { ...event, uuid: event_uuid });
+  io.to("chatRoom").emit("fileUpload", event);
 }
 
 async function sendOldEvents(socket) {
   try {
-    let query = `
+    const query = `
       SELECT event_uuid AS uuid,
         event_time AS time,
         event_user AS username,
@@ -153,7 +161,7 @@ async function sendOldEvents(socket) {
       FROM events
       ORDER BY event_id;
     `;
-    let oldEvents = await db.query(query);
+    const oldEvents = await db.query(query);
     socket.emit("oldEvents", oldEvents.rows);
   } catch (error) {
     console.error(error.message);
@@ -162,7 +170,7 @@ async function sendOldEvents(socket) {
 
 async function insertEvent({ time, username, type, info }) {
   try {
-    let query = `
+    const query = `
       INSERT INTO events (event_time, event_user, event_type, event_info)
       VALUES (to_timestamp($1 / 1000.0), $2, $3, $4)
       RETURNING *;
@@ -171,12 +179,4 @@ async function insertEvent({ time, username, type, info }) {
   } catch (error) {
     console.error(error.message);
   }
-}
-
-http.listen(3001, () => {
-  console.log("listening on *:3001");
-});
-
-function getUsersSet() {
-  return new Set(connections.values());
 }

@@ -10,15 +10,15 @@ let pool = new Pool({
 });
 
 async function query(text, params) {
-  let start = Date.now();
-  let results = await pool.query(text, params);
-  let duration = Date.now() - start;
+  const start = Date.now();
+  const results = await pool.query(text, params);
+  const duration = Date.now() - start;
   console.log("Executed query:", {
     text,
     params,
     duration,
     rows: results.rowCount,
-    result: results.rows[0],
+    firstRow: results.rows[0],
   });
   return results;
 }
