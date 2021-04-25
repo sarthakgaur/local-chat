@@ -1,20 +1,62 @@
-import React from "react";
+import React, { useContext, useEffect, useState } from "react";
+import SocketContext from "../context/socket";
+
+import UserListModal from "../components/UserListModal";
+
 import Navbar from "react-bootstrap/Navbar";
 import Nav from "react-bootstrap/Nav";
 import Button from "react-bootstrap/Button";
 
-const TopBar = ({ handleUserListModal }) => {
+const TopBar = () => {
+  const socket = useContext(SocketContext);
+  const [users, setUsers] = useState([]);
+  const [showUserListModal, setShowUserListModal] = useState(false);
+
+  const handleUserListModal = () => {
+    setShowUserListModal(!showUserListModal);
+  };
+
+  useEffect(() => {
+    const setNewUsers = (event) => {
+      setUsers(event.info.userList);
+    };
+
+    socket.on("userConnected", setNewUsers);
+    socket.on("userDisconnected", setNewUsers);
+
+    socket.on("oldEvents", (events) => {
+      events.forEach((event) => {
+        switch (event.type) {
+          case "userConnected":
+          case "userDisconnected":
+            setNewUsers(event);
+            break;
+          default:
+            break;
+        }
+      });
+    });
+  }, []);
+
   return (
-    <Navbar bg="light" expand="lg" className="fixed-top">
-      <Navbar.Brand>Local Chat</Navbar.Brand>
-      <Navbar.Toggle />
-      <Navbar.Collapse id="basic-navbar-nav">
-        <Nav className="mr-auto"></Nav>
-        <Button variant="link" onClick={() => handleUserListModal()}>
-          User List
-        </Button>
-      </Navbar.Collapse>
-    </Navbar>
+    <>
+      <Navbar bg="light" expand="lg" className="fixed-top">
+        <Navbar.Brand>Local Chat</Navbar.Brand>
+        <Navbar.Toggle />
+        <Navbar.Collapse id="basic-navbar-nav">
+          <Nav className="mr-auto"></Nav>
+          <Button variant="link" onClick={handleUserListModal}>
+            User List
+          </Button>
+        </Navbar.Collapse>
+      </Navbar>
+      {showUserListModal && (
+        <UserListModal
+          users={users}
+          handleUserListModal={handleUserListModal}
+        />
+      )}
+    </>
   );
 };
 
