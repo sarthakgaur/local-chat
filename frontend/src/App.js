@@ -10,12 +10,18 @@ const App = () => {
   const socket = useContext(SocketContext);
 
   useEffect(() => {
-    socket.on("connect", () => {
+    const handleConnect = () => {
       const username = localStorage.getItem("username");
       if (username) {
         socket.emit("userConnected", username);
       }
-    });
+    };
+
+    socket.on("connect", handleConnect);
+
+    return () => {
+      socket.off("connect", handleConnect);
+    };
   }, [socket]);
 
   return (

@@ -22,15 +22,23 @@ const UsernameInputModal = () => {
   };
 
   useEffect(() => {
-    socket.on("invalidUsername", () => {
+    const handleInvalidUsername = () => {
       setVerificationStage("failed");
-    });
+    };
 
-    socket.on("userVerified", (event) => {
+    const handleUserVerified = (event) => {
       document.cookie = `socket_id=${socket.id};SameSite=Strict`;
       localStorage.setItem("username", event.username);
       setVerificationStage("success");
-    });
+    };
+
+    socket.on("invalidUsername", handleInvalidUsername);
+    socket.on("userVerified", handleUserVerified);
+
+    return () => {
+      socket.off("invalidUsername", handleInvalidUsername);
+      socket.off("userVerified", handleUserVerified);
+    };
   }, [socket]);
 
   const showFeedback = () => {

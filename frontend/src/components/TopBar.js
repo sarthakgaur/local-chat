@@ -23,6 +23,11 @@ const TopBar = () => {
 
     socket.on("userConnected", setNewUsers);
     socket.on("userDisconnected", setNewUsers);
+
+    return () => {
+      socket.off("userConnected", setNewUsers);
+      socket.off("userDisconnected", setNewUsers);
+    };
   }, [socket]);
 
   return (
