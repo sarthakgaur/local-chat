@@ -23,19 +23,6 @@ const TopBar = () => {
 
     socket.on("userConnected", setNewUsers);
     socket.on("userDisconnected", setNewUsers);
-
-    socket.on("oldEvents", (events) => {
-      events.forEach((event) => {
-        switch (event.type) {
-          case "userConnected":
-          case "userDisconnected":
-            setNewUsers(event);
-            break;
-          default:
-            break;
-        }
-      });
-    });
   }, [socket]);
 
   return (

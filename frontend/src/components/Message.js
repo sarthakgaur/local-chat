@@ -91,7 +91,7 @@ const Message = ({ event }) => {
       message = createFileUploadMessage(event);
       break;
     default:
-      break;
+      return null;
   }
 
   return (

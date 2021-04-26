@@ -33,7 +33,10 @@ http.listen(3001, () => {
 const connections = new Map();
 
 function getUsersSet() {
-  return new Set(connections.values());
+  const usernameList = [];
+  connections.forEach((value) => usernameList.push(value.username));
+  console.log("usernameList", usernameList);
+  return new Set(usernameList);
 }
 
 // Set Storage Engine
@@ -87,7 +90,7 @@ function isValidUsername(username) {
 
 async function handleUserConnected(socket, username) {
   if (isValidUsername(username)) {
-    connections.set(socket.id, username);
+    connections.set(socket.id, { username });
 
     const time = Date.now();
     const type = "userConnected";
@@ -102,9 +105,12 @@ async function handleUserConnected(socket, username) {
     socket.on("chatMessage", (body) => {
       handleChatMessage(socket, body);
     });
+    socket.on("oldEvents", () => {
+      sendOldEvents(socket);
+    });
     socket.emit("userVerified", event);
 
-    await sendOldEvents(socket);
+    await sendRecentEvents(socket);
     event.uuid = (await insertEvent(event)).event_uuid;
     io.to("chatRoom").emit("userConnected", event);
   } else {
@@ -113,7 +119,7 @@ async function handleUserConnected(socket, username) {
 }
 
 async function handleDisconnect(socket) {
-  const username = connections.get(socket.id);
+  const { username } = connections.get(socket.id);
   connections.delete(socket.id);
 
   const time = Date.now();
@@ -128,7 +134,7 @@ async function handleDisconnect(socket) {
 
 async function handleChatMessage(socket, body) {
   const time = Date.now();
-  const username = connections.get(socket.id);
+  const { username } = connections.get(socket.id);
   const type = "chatMessage";
   const info = { body };
   const event = { time, username, type, info };
@@ -139,7 +145,7 @@ async function handleChatMessage(socket, body) {
 
 async function handleFileUpload(req, res) {
   const time = Date.now();
-  const username = connections.get(req.cookies["socket_id"]);
+  const { username } = connections.get(req.cookies["socket_id"]);
   const type = "fileUpload";
   const link = `/public/uploads/${req.file.filename}`;
   const info = { link, type: req.file.mimetype };
@@ -150,19 +156,52 @@ async function handleFileUpload(req, res) {
   io.to("chatRoom").emit("fileUpload", event);
 }
 
+async function sendRecentEvents(socket) {
+  try {
+    const query = `
+    SELECT *
+    FROM (SELECT 
+      event_id AS id,
+      event_uuid AS uuid,
+      event_time AS time,
+      event_user AS username,
+      event_type AS type, 
+      event_info AS info
+      FROM events
+      ORDER BY event_id DESC
+      LIMIT 100) AS derived_table
+    ORDER BY id ASC;
+    `;
+    const recentEvents = await db.query(query);
+    const connection = connections.get(socket.id);
+    connection.oldestRowId = recentEvents?.rows?.[0]?.id || 0;
+    socket.emit("recentEvents", recentEvents.rows);
+  } catch (error) {
+    console.error(error.message);
+  }
+}
+
 async function sendOldEvents(socket) {
   try {
     const query = `
-      SELECT event_uuid AS uuid,
+      SELECT *
+      FROM (SELECT 
+        event_id AS id,
+        event_uuid AS uuid,
         event_time AS time,
         event_user AS username,
         event_type AS type, 
         event_info AS info
-      FROM events
-      ORDER BY event_id;
+        FROM events
+        WHERE event_id < $1
+        ORDER BY event_id DESC
+        LIMIT 100) AS derived_table
+      ORDER BY id ASC;
     `;
-    const oldEvents = await db.query(query);
-    socket.emit("oldEvents", oldEvents.rows);
+    const connection = connections.get(socket.id);
+    const oldEvents = await db.query(query, [connection.oldestRowId]);
+    connection.oldestRowId = oldEvents?.rows?.[0]?.id || connection.oldestRowId;
+    socket.emit("oldEvents", oldEvents?.rows || []);
   } catch (error) {
     console.error(error.message);
   }
