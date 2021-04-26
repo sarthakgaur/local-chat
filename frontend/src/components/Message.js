@@ -40,9 +40,7 @@ function createMessageBody(text) {
 }
 
 function createFileUploadMessage(event) {
-  const pre = process.env.REACT_APP_SERVER_URL
-    ? process.env.REACT_APP_SERVER_URL
-    : "";
+  const pre = process.env.REACT_APP_SERVER_URL || "";
   let child;
 
   if (event.info.type.split("/")[0] === "image") {

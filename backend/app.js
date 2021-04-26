@@ -108,6 +108,9 @@ async function handleUserConnected(socket, username) {
     socket.on("oldEvents", () => {
       sendOldEvents(socket);
     });
+    socket.on("userTyping", () => {
+      handleUserTyping(socket);
+    });
     socket.emit("userVerified", event);
 
     await sendRecentEvents(socket);
@@ -154,6 +157,11 @@ async function handleFileUpload(req, res) {
   event.uuid = (await insertEvent(event)).event_uuid;
   res.status(200).send({ message: "File uploaded successfully." });
   io.to("chatRoom").emit("fileUpload", event);
+}
+
+function handleUserTyping(socket) {
+  const { username } = connections.get(socket.id);
+  socket.to("chatRoom").emit("userTyping", username);
 }
 
 async function sendRecentEvents(socket) {

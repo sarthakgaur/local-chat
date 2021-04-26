@@ -1,6 +1,7 @@
 import React, { useContext, useRef, useState } from "react";
 
 import SocketContext from "../context/socket";
+import debounce from "../utils/debounce";
 import FileUploadToast from "./FileUploadToast";
 
 import Form from "react-bootstrap/Form";
@@ -21,6 +22,10 @@ const ChatInput = () => {
   const handleFileUploadToast = () => {
     setShowFileUploadToast(!showFileUploadToast);
   };
+
+  const handleChatInputChange = debounce(() => {
+    socket.emit("userTyping");
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -75,7 +80,10 @@ const ChatInput = () => {
       )}
       <Form className="fixed-bottom" onSubmit={handleSubmit}>
         <InputGroup>
-          <FormControl ref={chatInput}></FormControl>
+          <FormControl
+            ref={chatInput}
+            onChange={handleChatInputChange}
+          ></FormControl>
           <InputGroup.Append>
             <Button
               className="btn-secondary"
