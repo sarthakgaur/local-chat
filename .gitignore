@@ -12,7 +12,7 @@ backend/dist
 frontend/build
 
 # Uploads
-backend/public/uploads/
+backend/uploads/
 
 # Misc
 .env

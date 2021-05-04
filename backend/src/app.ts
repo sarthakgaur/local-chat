@@ -22,7 +22,7 @@ app.use(morgan("common"));
 app.use(cookieParser());
 
 // Public Folder
-app.use("/public", express.static(path.join(__dirname, "../public")));
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Build folder
 app.use(express.static(path.join(__dirname, "../build")));
@@ -69,7 +69,7 @@ function getUsersSet() {
 
 // Set Storage Engine
 const storage = multer.diskStorage({
-  destination: "./public/uploads",
+  destination: "./uploads",
   filename: (_, file, cb) => {
     const extension = path.extname(file.originalname);
     const basename = path.basename(file.originalname, extension);
@@ -180,7 +180,7 @@ async function handleFileUpload(req: Request, res: Response) {
     req.cookies["socket_id"]
   ) as ConnectionInfo;
   const type = "fileUpload";
-  const link = `/public/uploads/${req.file.filename}`;
+  const link = `/uploads/${req.file.filename}`;
   const info = { link, type: req.file.mimetype };
   const event: Event = { time, username, type, info };
 
