@@ -1,15 +1,18 @@
-const Pool = require("pg").Pool;
-require("dotenv").config();
+import pg from "pg";
+import dotenv from "dotenv";
 
-let pool = new Pool({
+const Pool = pg.Pool;
+dotenv.config();
+
+export const pool = new Pool({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
+  port: parseInt(process.env.DB_PORT || ""),
   database: process.env.DB_DATABASE,
 });
 
-async function query(text, params) {
+export async function query(text: string, params?: Array<any>) {
   const start = Date.now();
   const results = await pool.query(text, params);
   const duration = Date.now() - start;
@@ -22,5 +25,3 @@ async function query(text, params) {
   });
   return results;
 }
-
-module.exports = { query, pool };

@@ -1,15 +1,19 @@
-const express = require("express");
-const multer = require("multer");
-const cookieParser = require("cookie-parser");
-const path = require("path");
-const fs = require("fs");
-const morgan = require("morgan");
+import express, { Request, Response } from "express";
+import http from "http";
+import path from "path";
 
-const db = require("./db/index");
+import socketio from "socket.io";
+
+import multer from "multer";
+import cookieParser from "cookie-parser";
+import morgan from "morgan";
+
+import * as db from "./db/index";
 
 const app = express();
-const http = require("http").createServer(app);
-const io = require("socket.io")(http);
+const httpServer = http.createServer(app);
+const io = new socketio.Server();
+io.attach(httpServer);
 
 // Logger Setup
 app.use(morgan("common"));
@@ -18,24 +22,48 @@ app.use(morgan("common"));
 app.use(cookieParser());
 
 // Public Folder
-app.use("/public", express.static("public"));
+app.use("/public", express.static(path.join(__dirname, "../public")));
 
 // Build folder
-app.use(express.static(path.join(__dirname, "build")));
+app.use(express.static(path.join(__dirname, "../build")));
 
 // Bootstrap Files
-app.use("/css", express.static("./node_modules/bootstrap/dist/css"));
+app.use(
+  "/css",
+  express.static(path.join(__dirname, "../node_modules/bootstrap/dist/css"))
+);
 
-http.listen(3001, () => {
+httpServer.listen(3001, () => {
   console.log("listening on *:3001");
 });
 
-const connections = new Map();
+interface ConnectionInfo {
+  username: string;
+  oldestRowId?: number;
+}
+
+interface EventInfo {
+  userList?: Array<string>;
+  body?: string;
+  link?: string;
+  type?: string;
+}
+
+interface Event {
+  username: string;
+  time: number;
+  type: string;
+  info: EventInfo;
+  uuid?: string;
+}
+
+const connections: Map<string, ConnectionInfo> = new Map();
 
 function getUsersSet() {
-  const usernameList = [];
-  connections.forEach((value) => usernameList.push(value.username));
-  console.log("usernameList", usernameList);
+  const usernameList: Array<string> = [];
+  connections.forEach((value: ConnectionInfo) =>
+    usernameList.push(value.username)
+  );
   return new Set(usernameList);
 }
 
@@ -57,11 +85,11 @@ const upload = multer({
 }).single("chatFile");
 
 app.get("/", (_, res) => {
-  res.sendFile(path.join(__dirname, "build", "index.html"));
+  res.sendFile(path.join(__dirname, "../build/index.html"));
 });
 
 app.post("/upload", (req, res) => {
-  upload(req, res, (err) => {
+  upload(req, res, (err: any) => {
     if (err) {
       res.status(500).send({ message: "File upload failed." });
     } else if (req.file == undefined) {
@@ -72,13 +100,13 @@ app.post("/upload", (req, res) => {
   });
 });
 
-io.on("connection", (socket) => {
-  socket.on("userConnected", (username) => {
+io.on("connection", (socket: socketio.Socket) => {
+  socket.on("userConnected", (username: string) => {
     handleUserConnected(socket, username);
   });
 });
 
-function isValidUsername(username) {
+function isValidUsername(username: string) {
   if (!username) {
     return false;
   } else if (getUsersSet().has(username)) {
@@ -88,7 +116,7 @@ function isValidUsername(username) {
   }
 }
 
-async function handleUserConnected(socket, username) {
+async function handleUserConnected(socket: socketio.Socket, username: string) {
   if (isValidUsername(username)) {
     connections.set(socket.id, { username });
 
@@ -96,7 +124,7 @@ async function handleUserConnected(socket, username) {
     const type = "userConnected";
     const userList = Array.from(getUsersSet());
     const info = { userList };
-    const event = { time, username, type, info };
+    const event: Event = { time, username, type, info };
 
     socket.join("chatRoom");
     socket.on("disconnect", () => {
@@ -121,50 +149,52 @@ async function handleUserConnected(socket, username) {
   }
 }
 
-async function handleDisconnect(socket) {
-  const { username } = connections.get(socket.id);
+async function handleDisconnect(socket: socketio.Socket) {
+  const { username } = connections.get(socket.id) as ConnectionInfo;
   connections.delete(socket.id);
 
   const time = Date.now();
   const type = "userDisconnected";
   const userList = Array.from(getUsersSet());
   const info = { userList };
-  const event = { time, username, type, info };
+  const event: Event = { time, username, type, info };
 
   event.uuid = (await insertEvent(event)).event_uuid;
   io.to("chatRoom").emit("userDisconnected", event);
 }
 
-async function handleChatMessage(socket, body) {
+async function handleChatMessage(socket: socketio.Socket, body: string) {
   const time = Date.now();
-  const { username } = connections.get(socket.id);
+  const { username } = connections.get(socket.id) as ConnectionInfo;
   const type = "chatMessage";
   const info = { body };
-  const event = { time, username, type, info };
+  const event: Event = { time, username, type, info };
 
   event.uuid = (await insertEvent(event)).event_uuid;
   io.to("chatRoom").emit("chatMessage", event);
 }
 
-async function handleFileUpload(req, res) {
+async function handleFileUpload(req: Request, res: Response) {
   const time = Date.now();
-  const { username } = connections.get(req.cookies["socket_id"]);
+  const { username } = connections.get(
+    req.cookies["socket_id"]
+  ) as ConnectionInfo;
   const type = "fileUpload";
   const link = `/public/uploads/${req.file.filename}`;
   const info = { link, type: req.file.mimetype };
-  const event = { time, username, type, info };
+  const event: Event = { time, username, type, info };
 
   event.uuid = (await insertEvent(event)).event_uuid;
   res.status(200).send({ message: "File uploaded successfully." });
   io.to("chatRoom").emit("fileUpload", event);
 }
 
-function handleUserTyping(socket) {
-  const { username } = connections.get(socket.id);
+function handleUserTyping(socket: socketio.Socket) {
+  const { username } = connections.get(socket.id) as ConnectionInfo;
   socket.to("chatRoom").emit("userTyping", username);
 }
 
-async function sendRecentEvents(socket) {
+async function sendRecentEvents(socket: socketio.Socket) {
   try {
     const query = `
     SELECT *
@@ -181,15 +211,15 @@ async function sendRecentEvents(socket) {
     ORDER BY id ASC;
     `;
     const recentEvents = await db.query(query);
-    const connection = connections.get(socket.id);
-    connection.oldestRowId = recentEvents?.rows?.[0]?.id || 0;
+    const connection = connections.get(socket.id) as ConnectionInfo;
+    connection.oldestRowId = recentEvents.rows[0].id || 0;
     socket.emit("recentEvents", recentEvents.rows);
   } catch (error) {
     console.error(error.message);
   }
 }
 
-async function sendOldEvents(socket) {
+async function sendOldEvents(socket: socketio.Socket) {
   try {
     const query = `
       SELECT *
@@ -206,16 +236,16 @@ async function sendOldEvents(socket) {
         LIMIT 100) AS derived_table
       ORDER BY id ASC;
     `;
-    const connection = connections.get(socket.id);
+    const connection = connections.get(socket.id) as ConnectionInfo;
     const oldEvents = await db.query(query, [connection.oldestRowId]);
-    connection.oldestRowId = oldEvents?.rows?.[0]?.id || connection.oldestRowId;
+    connection.oldestRowId = oldEvents.rows[0].id || connection.oldestRowId;
     socket.emit("oldEvents", oldEvents?.rows || []);
   } catch (error) {
     console.error(error.message);
   }
 }
 
-async function insertEvent({ time, username, type, info }) {
+async function insertEvent({ time, username, type, info }: Event) {
   try {
     const query = `
       INSERT INTO events (event_time, event_user, event_type, event_info)
